@@ -1,0 +1,5 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/uart_rx.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/uart_tx.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/uart.v"
+synth -top uart
+stat

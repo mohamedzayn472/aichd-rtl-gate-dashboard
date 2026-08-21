@@ -1,0 +1,12 @@
+{
+  "gate_count": 96,
+  "and_gates": 35,
+  "or_gates": 32,
+  "xor_gates": 0,
+  "not_gates": 13,
+  "nand_gates": 9,
+  "nor_gates": 4,
+  "total_cells": 96,
+  "module_name": "axis_demux",
+  "synthesis_status": "success"
+}

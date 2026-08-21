@@ -1,0 +1,4 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/axis_register.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/axis_pipeline_register.v"
+synth -top axis_pipeline_register
+stat

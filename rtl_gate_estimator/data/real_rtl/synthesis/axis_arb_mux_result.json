@@ -1,0 +1,12 @@
+{
+  "gate_count": 177,
+  "and_gates": 84,
+  "or_gates": 98,
+  "xor_gates": 0,
+  "not_gates": 34,
+  "nand_gates": 12,
+  "nor_gates": 6,
+  "total_cells": 177,
+  "module_name": "axis_arb_mux",
+  "synthesis_status": "success"
+}

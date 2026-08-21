@@ -1,0 +1,12 @@
+{
+  "gate_count": 88,
+  "and_gates": 15,
+  "or_gates": 96,
+  "xor_gates": 0,
+  "not_gates": 9,
+  "nand_gates": 0,
+  "nor_gates": 3,
+  "total_cells": 88,
+  "module_name": "axis_pipeline_register",
+  "synthesis_status": "success"
+}

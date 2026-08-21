@@ -1,0 +1,98 @@
+# RTL Gate Count Estimator Configuration
+
+# Data generation parameters
+data:
+  num_samples: 500
+  val_split: 0.15
+  test_split: 0.15
+  seed: 42
+  
+# RTL generation parameters
+rtl_generation:
+  supported_gates:
+    - AND
+    - OR
+    - XOR
+    - NOT
+    - NAND
+    - NOR
+  max_inputs: 8
+  max_outputs: 8
+  max_internal_signals: 32
+  logic_density_range: [0.3, 0.9]
+  module_depth_range: [2, 8]
+
+# Feature extraction parameters
+feature_extraction:
+  extract_structural: true
+  extract_complexity: true
+  extract_bitwidth: true
+  statistical_features: true
+  graph_features: true
+  window_size: 5
+
+# Model training parameters
+model:
+  type: RandomForest
+  n_estimators: 200
+  max_depth: 20
+  min_samples_split: 5
+  min_samples_leaf: 2
+  random_state: 42
+  n_jobs: -1
+  verbose: 1
+
+# SHAP explanation parameters
+shap:
+  explainer_type: TreeExplainer
+  num_explanation_samples: 100
+  top_features: 30
+  plot_type: bar
+
+# Ablation study parameters
+ablation:
+  num_iterations: 100
+  strategies:
+    - feature_removal
+    - mean_replacement
+    - random_replacement
+  permutation_repeats: 10
+
+# Synthesis tool configuration
+synthesis:
+  tool: yosys
+  technology: generic
+  optimization_level: 2
+  enable_fallback: true
+
+# Faithfulness verification parameters
+faithfulness:
+  enable_verification: true
+  correlation_threshold: 0.3
+  coverage_target: 0.8
+
+# Paths configuration
+paths:
+  data_dir: ./data
+  rtl_dir: ./data/rtl
+  features_dir: ./data/features
+  labels_dir: ./data/labels
+  ablation_dir: ./data/ablation
+  models_dir: ./models
+  results_dir: ./results
+  notebooks_dir: ./notebooks
+  config_dir: ./config
+
+# Logging configuration
+logging:
+  level: INFO
+  format: "[%(levelname)s] %(asctime)s - %(name)s - %(message)s"
+  file: ./results/execution.log
+
+# Execution parameters
+execution:
+  use_gpu: false
+  batch_size: 32
+  max_workers: 4
+  timeout_synthesis: 300
+  cache_features: true

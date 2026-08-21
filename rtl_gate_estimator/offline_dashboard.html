@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RTL Gate Count Estimator Dashboard</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(12, 23, 38, 0.92);
+      --panel-2: rgba(16, 31, 49, 0.92);
+      --line: rgba(153, 181, 214, 0.14);
+      --text: #e8f1ff;
+      --muted: #9fb2cc;
+      --accent: #59d8c8;
+      --accent-2: #f0b35d;
+      --accent-3: #90a8ff;
+      --danger: #ff6b6b;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(89, 216, 200, 0.18), transparent 24%),
+        radial-gradient(circle at 85% 10%, rgba(144, 168, 255, 0.18), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(240, 179, 93, 0.16), transparent 26%),
+        linear-gradient(180deg, #06101d 0%, #0b1626 100%);
+      color: var(--text);
+      font-family: "Segoe UI", "Trebuchet MS", "Verdana", sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.8), transparent 92%);
+    }
+
+    .shell {
+      width: min(1480px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.4fr 0.9fr;
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .hero-card, .panel {
+      background: linear-gradient(180deg, rgba(20, 35, 54, 0.96), rgba(10, 19, 31, 0.96));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero-card {
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -12% -40% auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(89, 216, 200, 0.20), transparent 68%);
+      filter: blur(4px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(89, 216, 200, 0.12);
+      color: #b9fff5;
+      border: 1px solid rgba(89, 216, 200, 0.25);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+      position: relative;
+      z-index: 1;
+    }
+
+    .subcopy {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.7;
+      max-width: 72ch;
+      position: relative;
+      z-index: 1;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line);
+      color: #dfe9f7;
+      font-size: 13px;
+    }
+
+    .chip strong {
+      color: white;
+      font-weight: 700;
+    }
+
+    .hero-side {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .panel h2, .panel h3 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .panel p, .panel li, .panel td, .panel th {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .kpi {
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(20, 35, 54, 0.95), rgba(12, 22, 36, 0.95));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      min-height: 122px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .kpi span {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .kpi strong {
+      display: block;
+      margin-top: 8px;
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      color: white;
+      letter-spacing: -0.03em;
+    }
+
+    .sections {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .section-wide {
+      grid-column: 1 / -1;
+    }
+
+    .matrix {
+      display: grid;
+      gap: 10px;
+    }
+
+    .metric-blocks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric-box {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+
+    .metric-box small {
+      display: block;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .metric-box strong {
+      font-size: 1.6rem;
+      color: white;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(7, 17, 31, 0.3);
+      min-width: 640px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(153, 181, 214, 0.10);
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: rgba(12, 23, 38, 0.95);
+      color: #dbe8fb;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .bar-chart {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 190px 1fr 72px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .bar-label {
+      color: #dfe9f7;
+      font-size: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-3));
+      box-shadow: 0 0 18px rgba(89, 216, 200, 0.24);
+    }
+
+    .bar-value {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      font-size: 13px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .callout {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(89, 216, 200, 0.08);
+      border: 1px solid rgba(89, 216, 200, 0.16);
+      color: #d7fff9;
+      line-height: 1.65;
+    }
+
+    .callout.warning {
+      background: rgba(240, 179, 93, 0.10);
+      border-color: rgba(240, 179, 93, 0.20);
+      color: #ffe6bf;
+    }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(89, 216, 200, 0.12);
+      border: 1px solid rgba(89, 216, 200, 0.22);
+      color: #befdf5;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .status-good { color: #8af7d8; }
+    .status-excellent { color: #9de6ff; }
+
+    footer {
+      margin-top: 18px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      padding: 10px 0 0;
+    }
+
+    @media (max-width: 1180px) {
+      .hero, .sections, .split, .kpi-grid, .metric-blocks {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-side {
+        grid-template-rows: auto;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 18px, 1480px);
+        padding-top: 12px;
+      }
+
+      .hero-card, .panel {
+        padding: 16px;
+      }
+
+      .bar-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .bar-value {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <article class="hero-card">
+        <div class="eyebrow">Offline dashboard snapshot</div>
+        <h1>RTL Gate Count Estimator</h1>
+        <p class="subcopy">
+          This page is a self-contained, local HTML dashboard. Open it directly from disk in any browser and review the model, SHAP, ablation, and faithfulness results without starting a server or needing internet access.
+        </p>
+        <div class="chips">
+          <div class="chip"><strong>Model:</strong> RandomForest</div>
+          <div class="chip"><strong>Test R²:</strong> 0.9612</div>
+          <div class="chip"><strong>Faithfulness:</strong> 0.9768</div>
+          <div class="chip"><strong>Features:</strong> 13</div>
+          <div class="chip"><strong>Samples:</strong> 500</div>
+        </div>
+      </article>
+
+      <div class="hero-side">
+        <article class="panel">
+          <h2>Snapshot Status</h2>
+          <div class="matrix">
+            <div class="callout">All data below was embedded from the latest local results folder, so the page opens even when the machine is offline.</div>
+            <div class="callout warning">If you regenerate the pipeline outputs later, re-export this HTML to refresh the snapshot.</div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Top Signals</h2>
+          <div id="top-signals"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Pipeline Summary</h2>
+      <div class="kpi-grid">
+        <div class="kpi"><span>RTL modules</span><strong>500</strong><small>Generated modules in data/rtl</small></div>
+        <div class="kpi"><span>Feature columns</span><strong>13</strong><small>Used by the trained model</small></div>
+        <div class="kpi"><span>Train / Val / Test</span><strong>350 / 75 / 75</strong><small>Split sizes in the saved metrics</small></div>
+        <div class="kpi"><span>Faithfulness score</span><strong>0.9768</strong><small>SHAP vs ablation alignment</small></div>
+      </div>
+    </section>
+
+    <section class="sections">
+      <article class="panel">
+        <h2>Training Metrics</h2>
+        <div class="metric-blocks">
+          <div class="metric-box"><small>Train R²</small><strong>0.9944</strong></div>
+          <div class="metric-box"><small>Validation R²</small><strong>0.9589</strong></div>
+          <div class="metric-box"><small>Test R²</small><strong>0.9612</strong></div>
+          <div class="metric-box"><small>Train MAE</small><strong>1.5986</strong></div>
+          <div class="metric-box"><small>Validation MAE</small><strong>4.2045</strong></div>
+          <div class="metric-box"><small>Test MAE</small><strong>3.6253</strong></div>
+        </div>
+        <div class="split" style="margin-top: 16px;">
+          <div>
+            <h3>R² Comparison</h3>
+            <div id="r2-chart" class="bar-chart"></div>
+          </div>
+          <div>
+            <h3>MAE Comparison</h3>
+            <div id="mae-chart" class="bar-chart"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Faithfulness Report</h2>
+        <div class="score-pill">High faithfulness · score 0.9768</div>
+        <div class="metric-blocks" style="grid-template-columns: 1fr 1fr;">
+          <div class="metric-box"><small>Spearman correlation</small><strong>0.9890</strong></div>
+          <div class="metric-box"><small>Kendall correlation</small><strong>0.9487</strong></div>
+        </div>
+        <div style="margin-top: 16px;" class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Overlap</th><th>Ratio</th><th>Matched features</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Top 5</td><td>100%</td><td>5 / 5</td></tr>
+              <tr><td>Top 10</td><td>100%</td><td>10 / 10</td></tr>
+              <tr><td>Top 15</td><td>86.7%</td><td>13 / 15</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout" style="margin-top: 16px;">
+          The SHAP ranking and the ablation ranking agree strongly on the same structural and complexity features, which supports the interpretation that the model is learning from meaningful RTL signals.
+        </div>
+      </article>
+    </section>
+
+    <section class="panel section-wide">
+      <h2>Feature Importance Comparison</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Feature</th>
+              <th>SHAP Importance</th>
+              <th>Ablation Importance</th>
+            </tr>
+          </thead>
+          <tbody id="comparison-body"></tbody>
+        </table>
+      </div>
+      <div class="split" style="margin-top: 18px;">
+        <div>
+          <h3>SHAP Importance</h3>
+          <div id="shap-chart" class="bar-chart"></div>
+        </div>
+        <div>
+          <h3>Ablation Importance</h3>
+          <div id="ablation-chart" class="bar-chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Open this file directly from disk for an always-available offline dashboard snapshot.
+    </footer>
+  </div>
+
+  <script>
+    const featureColumns = [
+      "struct_num_inputs",
+      "struct_num_outputs",
+      "struct_num_wires",
+      "complex_and_gates",
+      "complex_or_gates",
+      "complex_xor_gates",
+      "complex_not_gates",
+      "complex_nand_gates",
+      "complex_nor_gates",
+      "complex_lines",
+      "complex_chars",
+      "bitwidth_avg",
+      "bitwidth_max"
+    ];
+
+    const shapImportance = [
+      ["complex_xor_gates", 0.26415346693550984],
+      ["complex_chars", 0.2374178638654292],
+      ["complex_nand_gates", 0.20157055540580815],
+      ["complex_nor_gates", 0.1622927145247887],
+      ["complex_or_gates", 0.07440158096554797],
+      ["complex_and_gates", 0.03651064029220398],
+      ["complex_not_gates", 0.00989041621466217],
+      ["struct_num_wires", 0.006069419908216295],
+      ["struct_num_outputs", 0.0028386180751666513],
+      ["bitwidth_avg", 0.002030935669997449],
+      ["struct_num_inputs", 0.0016379445336238427],
+      ["complex_lines", 0.0011808796753959526],
+      ["bitwidth_max", 0.000004963933649839173]
+    ];
+
+    const ablationImportance = [
+      ["complex_nor_gates", 6.376796031968031],
+      ["complex_nand_gates", 5.625626410006665],
+      ["complex_chars", 5.086874362609606],
+      ["complex_xor_gates", 5.014052104922851],
+      ["complex_or_gates", 3.168591259962258],
+      ["complex_and_gates", 2.435670779692529],
+      ["complex_not_gates", 1.5381629253524247],
+      ["struct_num_wires", 0.8428420284992807],
+      ["struct_num_inputs", 0.29100273520923525],
+      ["struct_num_outputs", 0.2660746103896114],
+      ["bitwidth_avg", 0.17811117316017466],
+      ["complex_lines", 0.1393522705627708],
+      ["bitwidth_max", 0.0006561904761972954]
+    ];
+
+    const trainingR2 = [
+      ["Train", 0.9944258695476124],
+      ["Validation", 0.9588993869187699],
+      ["Test", 0.9612027166008662]
+    ];
+
+    const trainingMae = [
+      ["Train", 1.5986352319505879],
+      ["Validation", 4.204465470640473],
+      ["Test", 3.62525674436674]
+    ];
+
+    const comparison = featureColumns.map((feature) => ({
+      feature,
+      shap: (shapImportance.find(([name]) => name === feature) || [feature, 0])[1],
+      ablation: (ablationImportance.find(([name]) => name === feature) || [feature, 0])[1]
+    })).sort((a, b) => b.shap - a.shap);
+
+    const maxShap = Math.max(...shapImportance.map(([, value]) => value));
+    const maxAblation = Math.max(...ablationImportance.map(([, value]) => value));
+
+    function renderBars(targetId, rows, maxValue) {
+      const target = document.getElementById(targetId);
+      target.innerHTML = rows.map(([label, value]) => {
+        const width = maxValue === 0 ? 0 : (value / maxValue) * 100;
+        const formatted = maxValue < 1 ? value.toFixed(4) : value.toFixed(3);
+        return `
+          <div class="bar-row">
+            <div class="bar-label">${label}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${width.toFixed(2)}%"></div></div>
+            <div class="bar-value">${formatted}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderTopSignals() {
+      const topSignals = [...shapImportance]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, value], index) => ({
+          rank: index + 1,
+          name,
+          value
+        }));
+
+      document.getElementById("top-signals").innerHTML = topSignals.map((item) => `
+        <div class="metric-box" style="margin-bottom:10px;">
+          <small>Rank ${item.rank}</small>
+          <strong style="font-size:1.05rem;">${item.name}</strong>
+          <div style="margin-top:8px;color:var(--muted);font-size:13px;">SHAP importance ${item.value.toFixed(4)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderComparison() {
+      const body = document.getElementById("comparison-body");
+      body.innerHTML = comparison.map((row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td style="color:#e8f1ff;">${row.feature}</td>
+          <td>${row.shap.toFixed(6)}</td>
+          <td>${row.ablation.toFixed(6)}</td>
+        </tr>
+      `).join("");
+    }
+
+    renderBars("r2-chart", trainingR2, 1);
+    renderBars("mae-chart", trainingMae, Math.max(...trainingMae.map(([, value]) => value)));
+    renderBars("shap-chart", shapImportance.slice(0, 10), maxShap);
+    renderBars("ablation-chart", ablationImportance.slice(0, 10), maxAblation);
+    renderTopSignals();
+    renderComparison();
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "method_requested": "auto",
+  "yosys_available": true,
+  "label_sources": {
+    "ground_truth": 500,
+    "yosys": 0,
+    "regex": 1,
+    "regex_fallback": 0
+  },
+  "total_modules": 501
+}

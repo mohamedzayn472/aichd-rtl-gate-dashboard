@@ -1,0 +1,114 @@
+{
+  "timestamp": "2026-06-24T11:31:18.338496+00:00",
+  "model_type": "RandomForest",
+  "target": "gate_count",
+  "num_features": 15,
+  "feature_columns": [
+    "struct_num_inputs",
+    "struct_num_outputs",
+    "struct_num_wires",
+    "struct_num_assignments",
+    "complex_total_gates",
+    "complex_and_gates",
+    "complex_or_gates",
+    "complex_xor_gates",
+    "complex_not_gates",
+    "complex_nand_gates",
+    "complex_nor_gates",
+    "complex_lines",
+    "complex_chars",
+    "bitwidth_avg",
+    "bitwidth_max"
+  ],
+  "split_sizes": {
+    "train": 350,
+    "val": 75,
+    "test": 75
+  },
+  "metrics": {
+    "train": {
+      "mse": 0.5700685014152304,
+      "mae": 0.4408651051329625,
+      "r2": 0.9941615641212418
+    },
+    "val": {
+      "mse": 1.5272039207293369,
+      "mae": 0.8626728232878232,
+      "r2": 0.9828998056108668
+    },
+    "test": {
+      "mse": 1.1662419095602397,
+      "mae": 0.7520476815776813,
+      "r2": 0.9775374059522255
+    }
+  },
+  "feature_importance": [
+    {
+      "feature": "complex_total_gates",
+      "importance": 0.509335842408976
+    },
+    {
+      "feature": "struct_num_assignments",
+      "importance": 0.4614997206997005
+    },
+    {
+      "feature": "complex_nand_gates",
+      "importance": 0.009302015898641896
+    },
+    {
+      "feature": "complex_nor_gates",
+      "importance": 0.00849808322596787
+    },
+    {
+      "feature": "complex_chars",
+      "importance": 0.00398113556268185
+    },
+    {
+      "feature": "bitwidth_avg",
+      "importance": 0.0014687693054705232
+    },
+    {
+      "feature": "complex_not_gates",
+      "importance": 0.0010115215647979838
+    },
+    {
+      "feature": "complex_or_gates",
+      "importance": 0.0008631344719523337
+    },
+    {
+      "feature": "complex_and_gates",
+      "importance": 0.000805100519805384
+    },
+    {
+      "feature": "complex_lines",
+      "importance": 0.0007655667684539991
+    },
+    {
+      "feature": "struct_num_wires",
+      "importance": 0.0006819552783459708
+    },
+    {
+      "feature": "struct_num_outputs",
+      "importance": 0.0005995905526243727
+    },
+    {
+      "feature": "struct_num_inputs",
+      "importance": 0.0005974172677604367
+    },
+    {
+      "feature": "complex_xor_gates",
+      "importance": 0.0005601270617132153
+    },
+    {
+      "feature": "bitwidth_max",
+      "importance": 3.0019413107594063e-05
+    }
+  ],
+  "hyperparameters": {
+    "n_estimators": 200,
+    "max_depth": 20,
+    "min_samples_split": 5,
+    "min_samples_leaf": 2,
+    "random_state": 42
+  }
+}

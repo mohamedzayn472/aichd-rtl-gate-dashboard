@@ -1,0 +1,12 @@
+{
+  "gate_count": 132,
+  "and_gates": 24,
+  "or_gates": 28,
+  "xor_gates": 0,
+  "not_gates": 16,
+  "nand_gates": 4,
+  "nor_gates": 4,
+  "total_cells": 132,
+  "module_name": "rtl_module_225",
+  "synthesis_status": "success"
+}

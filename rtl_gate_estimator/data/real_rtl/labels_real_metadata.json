@@ -1,0 +1,32 @@
+{
+  "total_modules": 20,
+  "synthesised_ok": 17,
+  "failed": 3,
+  "failed_modules": [
+    "axis_gmii_rx",
+    "axis_gmii_tx",
+    "lfsr"
+  ],
+  "label_sources": {
+    "arbiter": "success",
+    "axis_adapter": "success",
+    "axis_arb_mux": "success",
+    "axis_broadcast": "success",
+    "axis_crosspoint": "success",
+    "axis_demux": "success",
+    "axis_fifo": "success",
+    "axis_gmii_rx": "skipped",
+    "axis_gmii_tx": "skipped",
+    "axis_mux": "success",
+    "axis_pipeline_register": "success",
+    "axis_rate_limit": "success",
+    "axis_register": "success",
+    "i2c_master": "success",
+    "i2c_master_axil": "success",
+    "lfsr": "skipped",
+    "priority_encoder": "success",
+    "uart": "success",
+    "uart_rx": "success",
+    "uart_tx": "success"
+  }
+}

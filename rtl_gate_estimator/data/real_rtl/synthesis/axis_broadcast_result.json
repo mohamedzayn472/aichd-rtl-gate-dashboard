@@ -1,0 +1,12 @@
+{
+  "gate_count": 60,
+  "and_gates": 14,
+  "or_gates": 26,
+  "xor_gates": 0,
+  "not_gates": 5,
+  "nand_gates": 8,
+  "nor_gates": 3,
+  "total_cells": 60,
+  "module_name": "axis_broadcast",
+  "synthesis_status": "success"
+}

@@ -1,0 +1,6 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/priority_encoder.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/arbiter.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/axis_mux.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/axis_arb_mux.v"
+synth -top axis_arb_mux
+stat

@@ -1,0 +1,12 @@
+{
+  "gate_count": 420,
+  "and_gates": 342,
+  "or_gates": 350,
+  "xor_gates": 42,
+  "not_gates": 162,
+  "nand_gates": 114,
+  "nor_gates": 134,
+  "total_cells": 420,
+  "module_name": "uart",
+  "synthesis_status": "success"
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "module_id": 0,
+    "num_inputs": 7,
+    "num_outputs": 2,
+    "num_internals": 3,
+    "logic_density": 0.5247240713084176,
+    "num_gates_target": 7,
+    "verilog_file": "c:\\Users\\moham\\Desktop\\AICD Project\\data\\generated\\rtl_module_0.v"
+  },
+  {
+    "module_id": 1,
+    "num_inputs": 7,
+    "num_outputs": 7,
+    "num_internals": 10,
+    "logic_density": 0.8704285838459498,
+    "num_gates_target": 44,
+    "verilog_file": "c:\\Users\\moham\\Desktop\\AICD Project\\data\\generated\\rtl_module_1.v"
+  },
+  {
+    "module_id": 2,
+    "num_inputs": 8,
+    "num_outputs": 2,
+    "num_internals": 27,
+    "logic_density": 0.7391963650868432,
+    "num_gates_target": 64,
+    "verilog_file": "c:\\Users\\moham\\Desktop\\AICD Project\\data\\generated\\rtl_module_2.v"
+  },
+  {
+    "module_id": 3,
+    "num_inputs": 6,
+    "num_outputs": 1,
+    "num_internals": 6,
+    "logic_density": 0.659195090518222,
+    "num_gates_target": 13,
+    "verilog_file": "c:\\Users\\moham\\Desktop\\AICD Project\\data\\generated\\rtl_module_3.v"
+  },
+  {
+    "module_id": 4,
+    "num_inputs": 8,
+    "num_outputs": 4,
+    "num_internals": 10,
+    "logic_density": 0.39361118426546193,
+    "num_gates_target": 16,
+    "verilog_file": "c:\\Users\\moham\\Desktop\\AICD Project\\data\\generated\\rtl_module_4.v"
+  }
+]

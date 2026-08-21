@@ -1,0 +1,12 @@
+{
+  "gate_count": 246,
+  "and_gates": 96,
+  "or_gates": 103,
+  "xor_gates": 6,
+  "not_gates": 43,
+  "nand_gates": 32,
+  "nor_gates": 40,
+  "total_cells": 246,
+  "module_name": "uart_rx",
+  "synthesis_status": "success"
+}

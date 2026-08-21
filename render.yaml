@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: aicd-rtl-dashboard
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production

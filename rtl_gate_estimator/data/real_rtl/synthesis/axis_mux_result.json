@@ -1,0 +1,12 @@
+{
+  "gate_count": 104,
+  "and_gates": 17,
+  "or_gates": 25,
+  "xor_gates": 0,
+  "not_gates": 7,
+  "nand_gates": 3,
+  "nor_gates": 1,
+  "total_cells": 104,
+  "module_name": "axis_mux",
+  "synthesis_status": "success"
+}

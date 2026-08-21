@@ -1,0 +1,54 @@
+{
+  "method": "shap",
+  "faithfulness_score": 0.9691575091575092,
+  "correlation_metrics": {
+    "spearman_correlation": 0.9956043956043955,
+    "spearman_p_value": 1.0315953358848783e-13,
+    "kendall_correlation": 0.9780219780219781,
+    "kendall_p_value": 3.2118087673643227e-10,
+    "num_features": 14
+  },
+  "overlap_metrics": {
+    "top_5_overlap": 4,
+    "top_5_overlap_ratio": 0.8,
+    "top_5_features": [
+      "complex_chars",
+      "complex_nand_gates",
+      "complex_nor_gates",
+      "complex_xor_gates"
+    ],
+    "top_10_overlap": 10,
+    "top_10_overlap_ratio": 1.0,
+    "top_10_features": [
+      "complex_nand_gates",
+      "bitwidth_avg",
+      "struct_num_outputs",
+      "struct_num_wires",
+      "complex_not_gates",
+      "complex_xor_gates",
+      "complex_nor_gates",
+      "complex_and_gates",
+      "complex_or_gates",
+      "complex_chars"
+    ],
+    "top_15_overlap": 14,
+    "top_15_overlap_ratio": 0.9333333333333333,
+    "top_15_features": [
+      "complex_nand_gates",
+      "bitwidth_avg",
+      "struct_num_outputs",
+      "complex_lines",
+      "struct_num_instances",
+      "struct_num_inputs",
+      "struct_num_wires",
+      "complex_not_gates",
+      "complex_xor_gates",
+      "complex_nor_gates",
+      "bitwidth_max",
+      "complex_and_gates",
+      "complex_or_gates",
+      "complex_chars"
+    ]
+  },
+  "interpretation": "High faithfulness - SHAP explanations align well with ablation results"
+}

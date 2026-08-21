@@ -1,0 +1,33 @@
+module rtl_module_288 (
+input wire [5:0] in_0,
+    input wire [2:0] in_1,
+    output wire [5:0] out_0,
+    output wire [3:0] out_1
+);
+
+    // Internal signals
+    wire [5:0] sig_0;
+    wire [5:0] sig_1;
+    wire [3:0] sig_2;
+    wire [0:0] sig_3;
+    wire [1:0] sig_4;
+    wire [6:0] sig_5;
+    wire [5:0] sig_6;
+    wire [4:0] sig_7;
+    wire [7:0] sig_8;
+    wire [0:0] sig_9;
+    wire [5:0] sig_10;
+    wire [4:0] sig_11;
+    wire [4:0] sig_12;
+    wire [5:0] sig_13;
+    wire [1:0] sig_14;
+    wire [4:0] sig_15;
+    wire [5:0] sig_16;
+
+    // Logic assignments
+    assign out_0 = ((sig_4 & out_1) | sig_13);
+    assign out_1 = ((sig_1 | (~((~(sig_7 | (~in_0))) | sig_0))) & in_0);
+    assign sig_13 = (~(~(sig_8 & (~(((in_1 & in_1) | sig_15) ^ sig_7)))));
+    assign sig_16 = ((sig_9 | ((~(sig_7 & (sig_8 & out_1))) | sig_12)) | sig_10);
+
+endmodule

@@ -1,0 +1,4 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/priority_encoder.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/arbiter.v"
+synth -top arbiter
+stat

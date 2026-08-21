@@ -1,0 +1,3 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/rtl/rtl_module_248.v"
+synth -top rtl_module_248
+stat

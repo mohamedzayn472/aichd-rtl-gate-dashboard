@@ -1,0 +1,46 @@
+[
+  {
+    "model_name": "RandomForest",
+    "train_time_sec": 0.7411,
+    "latency_per_sample_ms": 9.3338,
+    "latency_batch_100_ms": 933.377,
+    "val_r2": 0.9589,
+    "val_mae": 4.2045,
+    "test_r2": 0.9612,
+    "test_mae": 3.6253,
+    "test_rmse": 5.6698
+  },
+  {
+    "model_name": "XGBoost",
+    "train_time_sec": 316.4844,
+    "latency_per_sample_ms": 3.5066,
+    "latency_batch_100_ms": 350.6594,
+    "val_r2": 0.9525,
+    "val_mae": 5.0517,
+    "test_r2": 0.9379,
+    "test_mae": 4.5463,
+    "test_rmse": 7.1726
+  },
+  {
+    "model_name": "LightGBM",
+    "train_time_sec": 106.1546,
+    "latency_per_sample_ms": 0.5219,
+    "latency_batch_100_ms": 52.1867,
+    "val_r2": 0.959,
+    "val_mae": 4.1816,
+    "test_r2": 0.9718,
+    "test_mae": 3.4445,
+    "test_rmse": 4.8359
+  },
+  {
+    "model_name": "LinearRegression",
+    "train_time_sec": 0.0546,
+    "latency_per_sample_ms": 0.0268,
+    "latency_batch_100_ms": 2.6767,
+    "val_r2": 0.9974,
+    "val_mae": 1.2137,
+    "test_r2": 0.9963,
+    "test_mae": 1.3646,
+    "test_rmse": 1.7552
+  }
+]

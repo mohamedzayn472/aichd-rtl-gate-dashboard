@@ -1,0 +1,4 @@
+
+read_verilog rtl_gate_estimator\data\rtl\rtl_module_0.v
+synth -top rtl_module_0
+stat

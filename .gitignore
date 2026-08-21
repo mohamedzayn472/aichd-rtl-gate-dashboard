@@ -1,0 +1,37 @@
+# Python environments and caches
+.venv/
+**/.venv/
+venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node and Next.js artifacts
+dashboard/node_modules/
+dashboard/.next/
+dashboard/out/
+dashboard/.turbo/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and local reports
+*.log
+_test_all/
+_integration_test_output/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporary smoke-test files
+smoke_*
+inspect_*

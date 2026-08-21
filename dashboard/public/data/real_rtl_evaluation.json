@@ -1,0 +1,135 @@
+{
+  "num_modules": 17,
+  "model_evaluated": "RandomForest (Default)",
+  "out_of_distribution_metrics": {
+    "r2": -0.06846340043988275,
+    "mae": 8218.694492424242,
+    "rmse": 32404.27282452518
+  },
+  "yosys_model_out_of_distribution_metrics": {
+    "mae": 8207.669456349207,
+    "rmse": 32386.77285681644,
+    "r2": -0.06730966209509082
+  },
+  "per_module_predictions": [
+    {
+      "module_id": "arbiter",
+      "actual_gates": 15,
+      "predicted_gates": 44.76,
+      "error_abs": 29.76,
+      "error_pct": 198.42
+    },
+    {
+      "module_id": "axis_adapter",
+      "actual_gates": 18,
+      "predicted_gates": 45.31,
+      "error_abs": 27.31,
+      "error_pct": 151.72
+    },
+    {
+      "module_id": "axis_arb_mux",
+      "actual_gates": 177,
+      "predicted_gates": 50.39,
+      "error_abs": 126.61,
+      "error_pct": 71.53
+    },
+    {
+      "module_id": "axis_broadcast",
+      "actual_gates": 60,
+      "predicted_gates": 45.29,
+      "error_abs": 14.71,
+      "error_pct": 24.52
+    },
+    {
+      "module_id": "axis_crosspoint",
+      "actual_gates": 228,
+      "predicted_gates": 45.27,
+      "error_abs": 182.73,
+      "error_pct": 80.15
+    },
+    {
+      "module_id": "axis_demux",
+      "actual_gates": 96,
+      "predicted_gates": 48.17,
+      "error_abs": 47.83,
+      "error_pct": 49.82
+    },
+    {
+      "module_id": "axis_fifo",
+      "actual_gates": 133594,
+      "predicted_gates": 51.35,
+      "error_abs": 133542.65,
+      "error_pct": 99.96
+    },
+    {
+      "module_id": "axis_mux",
+      "actual_gates": 104,
+      "predicted_gates": 47.3,
+      "error_abs": 56.7,
+      "error_pct": 54.52
+    },
+    {
+      "module_id": "axis_pipeline_register",
+      "actual_gates": 88,
+      "predicted_gates": 45.27,
+      "error_abs": 42.73,
+      "error_pct": 48.56
+    },
+    {
+      "module_id": "axis_rate_limit",
+      "actual_gates": 462,
+      "predicted_gates": 47.67,
+      "error_abs": 414.33,
+      "error_pct": 89.68
+    },
+    {
+      "module_id": "axis_register",
+      "actual_gates": 44,
+      "predicted_gates": 45.31,
+      "error_abs": 1.31,
+      "error_pct": 2.98
+    },
+    {
+      "module_id": "i2c_master",
+      "actual_gates": 492,
+      "predicted_gates": 47.23,
+      "error_abs": 444.77,
+      "error_pct": 90.4
+    },
+    {
+      "module_id": "i2c_master_axil",
+      "actual_gates": 4092,
+      "predicted_gates": 47.2,
+      "error_abs": 4044.8,
+      "error_pct": 98.85
+    },
+    {
+      "module_id": "priority_encoder",
+      "actual_gates": 7,
+      "predicted_gates": 43.59,
+      "error_abs": 36.59,
+      "error_pct": 522.69
+    },
+    {
+      "module_id": "uart",
+      "actual_gates": 420,
+      "predicted_gates": 43.54,
+      "error_abs": 376.46,
+      "error_pct": 89.63
+    },
+    {
+      "module_id": "uart_rx",
+      "actual_gates": 246,
+      "predicted_gates": 45.34,
+      "error_abs": 200.66,
+      "error_pct": 81.57
+    },
+    {
+      "module_id": "uart_tx",
+      "actual_gates": 171,
+      "predicted_gates": 43.15,
+      "error_abs": 127.85,
+      "error_pct": 74.77
+    }
+  ]
+}

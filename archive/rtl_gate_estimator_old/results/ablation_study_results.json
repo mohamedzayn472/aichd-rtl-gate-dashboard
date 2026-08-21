@@ -1,0 +1,62 @@
+[
+  {
+    "feature": "complex_total_gates",
+    "ablation_score": 3.324814582833836
+  },
+  {
+    "feature": "struct_num_assignments",
+    "ablation_score": 3.091486415334665
+  },
+  {
+    "feature": "complex_nor_gates",
+    "ablation_score": 0.6719286623654126
+  },
+  {
+    "feature": "complex_nand_gates",
+    "ablation_score": 0.5956203018925522
+  },
+  {
+    "feature": "complex_chars",
+    "ablation_score": 0.0885838874458882
+  },
+  {
+    "feature": "bitwidth_avg",
+    "ablation_score": 0.0860858845598847
+  },
+  {
+    "feature": "complex_not_gates",
+    "ablation_score": 0.06613361224886231
+  },
+  {
+    "feature": "struct_num_outputs",
+    "ablation_score": 0.06439675216450225
+  },
+  {
+    "feature": "complex_or_gates",
+    "ablation_score": 0.06254727236652254
+  },
+  {
+    "feature": "complex_and_gates",
+    "ablation_score": 0.05707380266955298
+  },
+  {
+    "feature": "struct_num_inputs",
+    "ablation_score": 0.056984038600289014
+  },
+  {
+    "feature": "complex_lines",
+    "ablation_score": 0.03507905663780703
+  },
+  {
+    "feature": "struct_num_wires",
+    "ablation_score": 0.03158426984127014
+  },
+  {
+    "feature": "complex_xor_gates",
+    "ablation_score": 0.02902773232323247
+  },
+  {
+    "feature": "bitwidth_max",
+    "ablation_score": 0.0010447857142875216
+  }
+]

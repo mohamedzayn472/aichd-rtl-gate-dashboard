@@ -1,0 +1,12 @@
+{
+  "gate_count": 462,
+  "and_gates": 194,
+  "or_gates": 206,
+  "xor_gates": 22,
+  "not_gates": 55,
+  "nand_gates": 121,
+  "nor_gates": 62,
+  "total_cells": 462,
+  "module_name": "axis_rate_limit",
+  "synthesis_status": "success"
+}

@@ -1,0 +1,5 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/axis_fifo.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/i2c_master.v"
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/data/real_rtl/i2c_master_axil.v"
+synth -top i2c_master_axil
+stat

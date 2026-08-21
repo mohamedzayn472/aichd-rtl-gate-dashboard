@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RTL Gate Count Estimator - Explainable AI Dashboard</title>
+  <meta name="description" content="Explainable AI dashboard for estimating synthesized cell gate count directly from uncompiled Verilog RTL code snippets." />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css?v=20260806_5" />
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- ── LEFT SIDEBAR NAVIGATION ── -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-title">
+          <h1>RTL GATE</h1>
+          <span>Explainable AI</span>
+        </div>
+      </div>
+
+      <!-- Group 1: Platform -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Platform</div>
+        <nav class="sidebar-menu">
+          <button class="nav-tab active" data-tab="overview">
+            <span class="tab-icon">📌</span> Overview
+          </button>
+          <button class="nav-tab" data-tab="dashboard">
+            <span class="tab-icon">⚛️</span> Interactive Dashboard
+          </button>
+          <button class="nav-tab" data-tab="predict">
+            <span class="tab-icon">⚡</span> Predict Tool
+          </button>
+          <button class="nav-tab" data-tab="faithfulness">
+            <span class="tab-icon">🤖</span> Faithfulness Verification
+          </button>
+          <button class="nav-tab" data-tab="validation">
+            <span class="tab-icon">✉️</span> Real-World Validation
+          </button>
+        </div>
+      </div>
+
+      <!-- Group 2: Analysis -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Analysis</div>
+        <nav class="sidebar-menu">
+          <button class="nav-tab" data-tab="comparison">
+            <span class="tab-icon">⚙️</span> Model Comparison
+          </button>
+          <button class="nav-tab" data-tab="learning">
+            <span class="tab-icon">💥</span> Learning Curve
+          </button>
+          <button class="nav-tab" data-tab="latency">
+            <span class="tab-icon">🐒</span> Latency Benchmark
+          </button>
+          <button class="nav-tab" data-tab="docs">
+            <span class="tab-icon">📖</span> Developer Docs
+          </button>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer User Card -->
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div class="user-avatar">RE</div>
+          <div class="user-info">
+            <div class="name">RTL-ENG</div>
+            <div class="role">engineer@rtl-gate.ai</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT AREA ── -->
+    <main class="app-main">
+      
+      <!-- Main Header Bar -->
+      <div class="main-header">
+        <div class="main-header-title">
+          <h2>RTL Gate Count Estimator</h2>
+          <p>Explainable AI Synthesis & Optimization Platform</p>
+        </div>
+        <div class="platform-status-pill">
+          <span class="dot"></span> Connected: Platform Synchronized
+        </div>
+      </div>
+
+      <!-- Status Banner -->
+      <div class="status-banner online" id="status-banner" style="display: flex;">
+        <span class="dot"></span>
+        <span>Connected: RTL Gate Estimator Platform Active &amp; Ready</span>
+      </div>
+
+      <!-- Hidden Gemini API Key Input -->
+      <input type="hidden" id="gemini-api-key" />
+
+      <!-- ========================================================================= -->
+      <!-- TAB 1: OVERVIEW -->
+      <!-- ========================================================================= -->
+      <section id="overview" class="tab-content active">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">📌 PLATFORM OVERVIEW</div>
+            <div class="panel-addon">ML-Driven Gate Count</div>
+          </div>
+          <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+            Instant physical gate count prediction for uncompiled Verilog code snippets without running lengthy ASIC logic synthesis flows (Yosys, Synopsys Design Compiler, Cadence Genus).
+          </p>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">RTL MODULES</div>
+              <div class="kpi-val">500</div>
+              <div class="kpi-sub">Total Training Samples</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">FEATURES ANALYZED</div>
+              <div class="kpi-val">13</div>
+              <div class="kpi-sub">AST Structural Metrics</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">TEST R² SCORE</div>
+              <div class="kpi-val">0.9612</div>
+              <div class="kpi-sub">Model Holdout Accuracy</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">FAITHFULNESS SCORE</div>
+              <div class="kpi-val">0.9768</div>
+              <div class="kpi-sub">SHAP Explanation Fidelity</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🛠️ PIPELINE ARCHITECTURE</div>
+            <div class="panel-addon">7 Automated Steps</div>
+          </div>
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <div class="kpi-card">
+              <div class="kpi-label">1. Dataset Synthesizer</div>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Generates 500 diverse synthesizable Verilog modules (adders, ALUs, MUXes, FSMs, pipelines).</p>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">2. Feature Extractor</div>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Extracts 13 structural AST features (wire count, bitwidth, nesting depth, operator density).</p>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">3. Ground-Truth Labeler</div>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Synthesizes modules using Yosys / Gate Estimator to record exact cell gate counts.</p>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">4. Explainable AI Model</div>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Trains Random Forest, XGBoost, and MLP regressor models with SHAP value computation.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 2: INTERACTIVE DASHBOARD -->
+      <!-- ========================================================================= -->
+      <section id="dashboard" class="tab-content">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total RTL Modules</div>
+            <div class="kpi-val" id="kpi-samples">500</div>
+            <div class="kpi-sub">Synthesized Dataset</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Features Analyzed</div>
+            <div class="kpi-val" id="kpi-features">13</div>
+            <div class="kpi-sub">AST Structural Attributes</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Test R² Score</div>
+            <div class="kpi-val" id="kpi-r2">0.9612</div>
+            <div class="kpi-sub">Accuracy Metric</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Faithfulness Score</div>
+            <div class="kpi-val" id="kpi-faithfulness">0.9768</div>
+            <div class="kpi-sub">SHAP vs Empirical Match</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">📊 GLOBAL SHAP IMPORTANCE</div>
+            </div>
+            <div id="shap-chart" style="height: 320px; width: 100%;"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">📉 EMPIRICAL ABLATION IMPORTANCE</div>
+            </div>
+            <div id="ablation-chart" style="height: 320px; width: 100%;"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🔍 DETAILED FEATURE ANALYSIS TABLE</div>
+          </div>
+          <input type="text" class="search-input" id="table-search" placeholder="Search features by name or category..." />
+          <div class="table-container">
+            <table id="feature-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Feature Name</th>
+                  <th>Description</th>
+                  <th>SHAP Importance</th>
+                  <th>Ablation Impact (R² Δ)</th>
+                </tr>
+              </thead>
+              <tbody id="feature-analysis-tbody">
+                <!-- Dynamically populated by app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🖼️ INTERPRETABILITY PLOTS GALLERY</div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+            <div id="gallery-beeswarm"></div>
+            <div id="gallery-bar"></div>
+            <div id="gallery-dependence"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 3: PREDICT TOOL -->
+      <!-- ========================================================================= -->
+      <section id="predict" class="tab-content">
+        
+        <!-- Agent Header Banner -->
+        <div class="agent-banner">
+          <div class="agent-info">
+            <div class="agent-avatar">✨</div>
+            <div class="agent-title">
+              <h3>AI Verilog Architect &amp; Optimization Agent</h3>
+              <p>Neural Gate Synthesis Advisor</p>
+            </div>
+          </div>
+          <div class="badge-online">Online AI Model Active</div>
+        </div>
+
+        <div class="predict-grid">
+          
+          <!-- LEFT COLUMN: INPUTS -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">📝 VERILOG CODE INPUT</div>
+              <div class="panel-addon">.v / .sv</div>
+            </div>
+
+            <!-- Drop Zone -->
+            <div id="drop-zone" class="dropzone">
+              <input type="file" id="file-input" accept=".v,.sv" style="display: none;" />
+              <div style="font-size: 24px; margin-bottom: 6px;">📄</div>
+              <div style="font-size: 13px; font-weight: 600;">Drop Verilog file here</div>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Supports .v and .sv — click to browse</div>
+            </div>
+
+            <!-- Textarea -->
+            <textarea id="code-paste" class="code-textarea" placeholder="Or paste your Verilog module code here directly..."></textarea>
+
+            <button id="btn-predict-run" class="btn-primary">
+              ⚡ Run Inference &amp; Analysis
+            </button>
+          </div>
+
+          <!-- RIGHT COLUMN: RESULTS -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">🎯 PREDICTION &amp; EXPLANATION RESULTS</div>
+            </div>
+
+            <div id="predict-results-placeholder" style="text-align: center; padding: 40px; color: var(--muted);">
+              <div style="font-size: 36px; margin-bottom: 12px;">⚡</div>
+              <p>Paste Verilog code and click <strong>Run Inference &amp; Analysis</strong> to calculate predicted gate count and AI refactoring report.</p>
+            </div>
+
+            <div id="predict-results-container" style="display: none;">
+              <!-- Hero Counter -->
+              <div class="gate-counter-hero">
+                <div class="gate-counter-title">ESTIMATED GATE COUNT</div>
+                <div id="predict-gate-count" class="gate-counter-num">0</div>
+                <div class="gate-counter-sub">Standard Logic Cells (NAND2 Equivalent)</div>
+              </div>
+
+              <!-- Structural Mini Stats -->
+              <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+                <div class="kpi-card" style="padding: 14px; text-align: center;">
+                  <div class="kpi-label">INPUTS</div>
+                  <div id="predict-inputs" style="font-size: 20px; font-weight: 800; color: #fff;">0</div>
+                </div>
+                <div class="kpi-card" style="padding: 14px; text-align: center;">
+                  <div class="kpi-label">OUTPUTS</div>
+                  <div id="predict-outputs" style="font-size: 20px; font-weight: 800; color: #fff;">0</div>
+                </div>
+                <div class="kpi-card" style="padding: 14px; text-align: center;">
+                  <div class="kpi-label">WIRES</div>
+                  <div id="predict-wires" style="font-size: 20px; font-weight: 800; color: #fff;">0</div>
+                </div>
+              </div>
+
+              <!-- View Subtabs -->
+              <div id="predict-view-subtabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button id="btn-predict-view-report" class="nav-tab active" style="flex: 1; justify-content: center;">
+                  📄 Detailed Report &amp; Optimizations
+                </button>
+                <button id="btn-predict-view-chart" class="nav-tab" style="flex: 1; justify-content: center;">
+                  📊 Feature Contribution Breakdown
+                </button>
+              </div>
+
+              <!-- Content Area -->
+              <div id="predict-report-content"></div>
+              <div id="predict-contributions-chart" style="display: none; height: 300px;"></div>
+              <div id="predict-features-table" style="display: none;"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- AI OPTIMIZED CODE CONTAINER -->
+        <div id="predict-optimized-code-container" class="panel" style="display: none; margin-top: 24px;">
+          <div class="panel-header">
+            <div class="panel-title">✨ AI VERILOG ARCHITECT REFACTORED CODE</div>
+            <div style="display: flex; gap: 8px;">
+              <button id="btn-load-optimized" class="nav-tab" style="padding: 4px 12px; font-size: 12px; background: rgba(20,184,166,0.2); color: var(--accent);">⚡ Load Code</button>
+              <button id="btn-copy-optimized" class="nav-tab" style="padding: 4px 12px; font-size: 12px; background: rgba(255,255,255,0.08);">📋 Copy</button>
+            </div>
+          </div>
+          <div id="predict-opt-agent-impact" style="margin-bottom: 14px;"></div>
+          <pre id="predict-optimized-code" style="background: rgba(6,10,20,0.9); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; color: #34d399; font-family: var(--font-mono); font-size: 13px; overflow-x: auto; white-space: pre-wrap;"></pre>
+        </div>
+
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 4: FAITHFULNESS VERIFICATION -->
+      <!-- ========================================================================= -->
+      <section id="faithfulness" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🤖 SHAP EXPLANATION FAITHFULNESS REPORT</div>
+            <div class="panel-addon" id="faith-score-pill">Faithfulness: 0.9768</div>
+          </div>
+          <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">
+            Quantifies the correlation between model SHAP values and true empirical gate count reductions when removing individual features.
+          </p>
+          <div class="kpi-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+            <div class="kpi-card">
+              <div class="kpi-label">Spearman Rank Correlation</div>
+              <div class="kpi-val" id="faith-spearman">0.9768</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Kendall Tau Correlation</div>
+              <div class="kpi-val" id="faith-kendall">0.9120</div>
+            </div>
+          </div>
+          <div class="table-container" style="margin-bottom: 20px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Top-K Set</th>
+                  <th>Overlap Ratio</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="overlap-body"></tbody>
+            </table>
+          </div>
+          <div id="faithfulness-container"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 5: REAL-WORLD VALIDATION -->
+      <!-- ========================================================================= -->
+      <section id="validation" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">✉️ REAL-WORLD VERILOG BENCHMARK VALIDATION</div>
+          </div>
+          <div id="validation-container"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 6: MODEL COMPARISON -->
+      <!-- ========================================================================= -->
+      <section id="comparison" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">⚙️ REGRESSION ALGORITHM BENCHMARK COMPARISON</div>
+          </div>
+          <div id="comparison-container"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 7: LEARNING CURVE -->
+      <!-- ========================================================================= -->
+      <section id="learning" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">💥 TRAINING SAMPLE SIZE VS MODEL R² TRAJECTORY</div>
+          </div>
+          <div id="learning-container"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 8: LATENCY BENCHMARK -->
+      <!-- ========================================================================= -->
+      <section id="latency" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🐒 INFERENCE LATENCY BENCHMARK</div>
+          </div>
+          <div id="latency-container"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 9: DEVELOPER DOCS -->
+      <!-- ========================================================================= -->
+      <section id="docs" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">📖 DEVELOPER DOCUMENTATION &amp; API REFERENCE</div>
+          </div>
+          <div id="docs-container"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Lightbox for plot zoom -->
+  <div id="lightbox" class="lightbox" style="display: none;">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-content" src="" alt="" />
+    <div class="lightbox-caption"></div>
+  </div>
+
+  <!-- External & System Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="./rtl_gate_estimator/results/dataset_summary.js"></script>
+  <script src="./rtl_gate_estimator/results/feature_importance.js"></script>
+  <script src="./rtl_gate_estimator/results/empirical_ablation.js"></script>
+  <script src="./rtl_gate_estimator/results/model_comparison.js"></script>
+  <script src="./rtl_gate_estimator/results/learning_curve.js"></script>
+  <script src="./rtl_gate_estimator/results/real_world_validation.js"></script>
+  <script src="./rtl_gate_estimator/results/faithfulness_report_permutation.js"></script>
+  <script src="./rtl_gate_estimator/results/latency_benchmark.js"></script>
+  <script src="./rtl_gate_estimator/results/shap_values.js"></script>
+  <script src="app.js?v=20260806_9"></script>
+  <script src="./rtl_gate_estimator/results/model_structure.js" defer></script>
+</body>
+</html>

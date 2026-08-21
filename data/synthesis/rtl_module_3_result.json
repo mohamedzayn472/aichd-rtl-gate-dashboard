@@ -1,0 +1,8 @@
+{
+  "total_gates": 0,
+  "gate_types": {},
+  "lut_count": 0,
+  "flipflop_count": 0,
+  "module_name": "rtl_module_3",
+  "synthesis_status": "partial"
+}

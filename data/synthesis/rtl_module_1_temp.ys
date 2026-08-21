@@ -1,0 +1,4 @@
+
+read_verilog c:\Users\moham\Desktop\AICD Project\data\generated\rtl_module_1.v
+synth -top rtl_module_1
+stat

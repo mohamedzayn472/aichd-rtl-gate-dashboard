@@ -1,0 +1,12 @@
+{
+  "gate_count": 133594,
+  "and_gates": 69998,
+  "or_gates": 10357,
+  "xor_gates": 18,
+  "not_gates": 10303,
+  "nand_gates": 39585,
+  "nor_gates": 28,
+  "total_cells": 133594,
+  "module_name": "axis_fifo",
+  "synthesis_status": "success"
+}

@@ -1,0 +1,12 @@
+{
+  "gate_count": 492,
+  "and_gates": 302,
+  "or_gates": 118,
+  "xor_gates": 13,
+  "not_gates": 113,
+  "nand_gates": 110,
+  "nor_gates": 28,
+  "total_cells": 492,
+  "module_name": "i2c_master",
+  "synthesis_status": "success"
+}
