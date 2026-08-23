@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import DashboardPageLayout from "@/components/dashboard/layout";
 import ProcessorIcon from "@/components/icons/proccesor";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import NumberFlow from "@number-flow/react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 const DEMO_VERILOG = `module ripple_adder_4bit (
   input  wire [3:0] a,
@@ -39,6 +41,7 @@ export default function PredictTool() {
   const [activeTab, setActiveTab] = useState<InstrumentTab>("observation");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const savedDraft = window.localStorage.getItem("aichd-observatory-draft");
@@ -92,7 +95,7 @@ export default function PredictTool() {
       {errorMsg && <div className="obs-error" role="alert"><b>Inference signal interrupted</b><span>{errorMsg}</span></div>}
 
       <section className="obs-workbench">
-        <article className="obs-source-instrument">
+        <article className={`obs-source-instrument ${isRunning ? "is-running" : ""}`}>
           <header className="obs-instrument-header"><div><span>01 / SOURCE INSTRUMENT</span><b>{uploadedFileName ?? "Untitled Verilog module"}</b></div><small>draft saves locally</small></header>
           <div className={`obs-dropzone ${isDragging ? "dragging" : ""}`} onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={async (event) => { event.preventDefault(); setIsDragging(false); const file = event.dataTransfer.files?.[0]; if (file) await loadFile(file); }} onClick={() => fileInputRef.current?.click()}>
             <input ref={fileInputRef} type="file" accept=".v,.sv" className="hidden" onChange={async (event) => { const file = event.target.files?.[0]; if (file) await loadFile(file); event.target.value = ""; }} />
@@ -102,17 +105,19 @@ export default function PredictTool() {
           <footer className="obs-source-actions"><button onClick={resetDraft} className="obs-text-button">Restore example</button><span>{code.length.toLocaleString()} characters</span><button id="btn-predict-run" onClick={runInference} disabled={isRunning} className="obs-run-button">{isRunning ? "Reading source…" : "Run live estimate →"}</button></footer>
         </article>
 
-        <article className="obs-result-instrument">
+        <article className={`obs-result-instrument ${isRunning ? "is-running" : ""}`}>
           <header className="obs-instrument-header"><div><span>02 / EVIDENCE INSTRUMENT</span><b>{hasResult ? "Live observation complete" : "Awaiting source signal"}</b></div><small>{hasResult ? "saved locally" : "no result yet"}</small></header>
           <div className="obs-result-tabs" role="tablist" aria-label="Inference results">
-            {(["observation", "evidence", "history"] as InstrumentTab[]).map((tab) => <button key={tab} role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? "active" : ""} onClick={() => setActiveTab(tab)}>{tab}</button>)}
+            {(["observation", "evidence", "history"] as InstrumentTab[]).map((tab) => <button key={tab} role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? "active" : ""} onClick={() => setActiveTab(tab)}>{activeTab === tab && <motion.i layoutId="obs-result-tab-indicator" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}<span>{tab}</span></button>)}
           </div>
 
-          {activeTab === "observation" && (hasResult ? <div className="obs-live-result"><div className="obs-gate-orb"><span>ESTIMATED GATES</span><b>{gateCount}</b><small>NAND2 EQUIVALENT</small></div><div className="obs-result-readout"><div><span>TOP INFLUENCE</span><b>{topFeature}</b><small>{typeof topImpact === "number" ? `${topImpact >= 0 ? "+" : ""}${topImpact.toFixed(4)} contribution` : "Feature attribution returned"}</small></div><div className="obs-structural-row"><span><b>{totalInputs}</b> inputs</span><span><b>{totalOutputs}</b> outputs</span><span><b>{totalWires}</b> wires</span></div></div></div> : <div className="obs-empty-result"><i /><b>Source instrument ready.</b><span>Run an estimate to open the gate-count and structural evidence surfaces.</span></div>)}
+          <AnimatePresence mode="wait">
+            {activeTab === "observation" && (hasResult ? <motion.div key="observation-result" className="obs-live-result" initial={false} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 290, damping: 28 }}><div className="obs-gate-orb"><span>ESTIMATED GATES</span><b><NumberFlow value={gateCount} /></b><small>NAND2 EQUIVALENT</small></div><div className="obs-result-readout"><div><span>TOP INFLUENCE</span><b>{topFeature}</b><small>{typeof topImpact === "number" ? `${topImpact >= 0 ? "+" : ""}${topImpact.toFixed(4)} contribution` : "Feature attribution returned"}</small></div><div className="obs-structural-row"><span><b><NumberFlow value={totalInputs} /></b> inputs</span><span><b><NumberFlow value={totalOutputs} /></b> outputs</span><span><b><NumberFlow value={totalWires} /></b> wires</span></div></div></motion.div> : <motion.div key="observation-empty" className="obs-empty-result" initial={false} animate={{ opacity: 1, y: 0 }}><i /><b>Source instrument ready.</b><span>Run an estimate to open the gate-count and structural evidence surfaces.</span></motion.div>)}
 
-          {activeTab === "evidence" && (hasResult ? <div className="obs-evidence-view"><p>Positive values increase the estimated gate count; negative values reduce it.</p><div className="h-[260px] w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={shapData} layout="vertical" margin={{ left: 4, right: 12 }}><CartesianGrid strokeDasharray="3 3" stroke="rgba(160,230,247,.18)" /><XAxis type="number" stroke="#8bb5c4" tick={{ fontSize: 10 }} /><YAxis dataKey="feature" type="category" width={125} tick={{ fontSize: 10, fill: "#c9e9f0" }} /><Tooltip contentStyle={{ backgroundColor: "#10294c", borderColor: "rgba(160,230,247,.35)", borderRadius: "10px" }} /><Bar dataKey="importance" fill="#8be8f6" radius={[0, 5, 5, 0]} /></BarChart></ResponsiveContainer></div></div> : <div className="obs-empty-result"><i /><b>Evidence will appear here.</b><span>The chart is populated only after a successful live inference.</span></div>)}
+            {activeTab === "evidence" && (hasResult ? <motion.div key="evidence-result" className="obs-evidence-view" initial={false} animate={{ opacity: 1, y: 0 }}><p>Positive values increase the estimated gate count; negative values reduce it.</p><div className="h-[260px] w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={shapData} layout="vertical" margin={{ left: 4, right: 12 }}><CartesianGrid strokeDasharray="3 3" stroke="rgba(160,230,247,.18)" /><XAxis type="number" stroke="#8bb5c4" tick={{ fontSize: 10 }} /><YAxis dataKey="feature" type="category" width={125} tick={{ fontSize: 10, fill: "#c9e9f0" }} /><Tooltip contentStyle={{ backgroundColor: "rgba(11, 26, 56, .92)", backdropFilter: "blur(16px)", borderColor: "rgba(160,230,247,.35)", borderRadius: "12px" }} /><Bar dataKey="importance" fill="#8be8f6" radius={[0, 6, 6, 0]} animationDuration={reduceMotion ? 0 : 1200} animationEasing="ease-out" /></BarChart></ResponsiveContainer></div></motion.div> : <motion.div key="evidence-empty" className="obs-empty-result" initial={false} animate={{ opacity: 1, y: 0 }}><i /><b>Evidence will appear here.</b><span>The chart is populated only after a successful live inference.</span></motion.div>)}
 
-          {activeTab === "history" && <div className="obs-history-view">{history.length === 0 ? <div className="obs-empty-result"><i /><b>No local observations yet.</b><span>Completed estimates are retained in this browser for quick source restoration.</span></div> : <><div className="obs-history-heading"><span>Recent local results</span><button className="obs-text-button" onClick={() => setHistory([])}>Clear history</button></div>{history.map((item) => <button className="obs-history-item" key={item.id} onClick={() => { setCode(item.code); setUploadedFileName(item.name); setActiveTab("observation"); setHasResult(false); }}><span>{item.timestamp}</span><b>{item.name}</b><small>{item.gateCount} gates · {item.topFeature}</small><em>Restore →</em></button>)}</>}</div>}
+            {activeTab === "history" && <motion.div key="history" className="obs-history-view" initial={false} animate={{ opacity: 1, y: 0 }}>{history.length === 0 ? <div className="obs-empty-result"><i /><b>No local observations yet.</b><span>Completed estimates are retained in this browser for quick source restoration.</span></div> : <><div className="obs-history-heading"><span>Recent local results</span><button className="obs-text-button" onClick={() => setHistory([])}>Clear history</button></div>{history.map((item) => <button className="obs-history-item" key={item.id} onClick={() => { setCode(item.code); setUploadedFileName(item.name); setActiveTab("observation"); setHasResult(false); }}><span>{item.timestamp}</span><b>{item.name}</b><small>{item.gateCount} gates · {item.topFeature}</small><em>Restore →</em></button>)}</>}</motion.div>}
+          </AnimatePresence>
         </article>
       </section>
     </DashboardPageLayout>

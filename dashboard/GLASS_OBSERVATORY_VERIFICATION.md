@@ -13,3 +13,11 @@ Selecting Analysis from the command palette opened the existing data-rich analys
 Render reported commit `ef1dc06` as live. The public deployment now renders the complete Glass Observatory application structure, including the replacement top navigation, Observation Deck, orbital instrument surface, and live project metrics.
 
 The deployed public Inference Workbench successfully ran the example Verilog source through the production API. It produced **19** estimated NAND2-equivalent gates, `complex_chars` as the returned top influence, and the expected **3** inputs, **2** outputs, and **6** wires. The public result was retained in the browser’s local Observatory history.
+
+The premium refinement was checked locally after a clean production build. The Observation Deck rendered the new dark-luxe optical surface hierarchy, indigo/cyan spectral gradient, animated navigation treatment, four-metric instrument layout, and ambient Observatory depth without replacing the approved Glass Observatory structure.
+
+During local interaction testing, the route-level opacity transition was removed because its state could leave newly navigated content temporarily hidden. The retained premium motion now stays within reliable in-view, tab, data, and loading instruments; the full Inference Workbench is immediately visible after navigation.
+
+The refined local inference run presented the intended non-blocking processing state: the live API channel changed to Processing, the action button changed to “Reading source…”, and the instrument panels displayed the shimmer loading layer without obscuring available controls.
+
+The completion test identified that initial opacity states in the animated result panels could delay visibility when decorative motion was disabled. Those initial opacity states were removed while retaining animated numeric transitions, active-tab movement, chart bars, signal bars, hover response, and loading feedback.

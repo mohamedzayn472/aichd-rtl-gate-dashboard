@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 const navigation = [
   { href: "/", label: "Overview", index: "01" },
@@ -48,6 +49,9 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
   return (
     <div className="obs-shell">
       <div className="obs-starfield" aria-hidden="true" />
+      <div className="obs-ambient-orb obs-ambient-indigo" aria-hidden="true" />
+      <div className="obs-ambient-orb obs-ambient-cyan" aria-hidden="true" />
+      <div className="obs-ambient-orb obs-ambient-violet" aria-hidden="true" />
       <header className="obs-topbar">
         <Link href="/" className="obs-brand" aria-label="AICHD Observatory home">
           <span className="obs-brand-sigil" aria-hidden="true"><i /><i /><i /></span>
@@ -56,7 +60,8 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
         <nav className="obs-nav" aria-label="Primary navigation">
           {navigation.map((item) => (
             <Link key={item.href} href={item.href} className={pathname === item.href ? "active" : ""} aria-current={pathname === item.href ? "page" : undefined}>
-              <em>{item.index}</em>{item.label}
+              {pathname === item.href && <motion.span className="obs-nav-indicator" layoutId="obs-nav-indicator" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+              <em>{item.index}</em><span>{item.label}</span>
             </Link>
           ))}
         </nav>
@@ -68,6 +73,9 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
         </div>
       </header>
       <main className="obs-main">{children}</main>
+      <nav className="obs-mobile-dock" aria-label="Mobile primary navigation">
+        {navigation.slice(0, 4).map((item) => <Link key={item.href} href={item.href} className={pathname === item.href ? "active" : ""} aria-current={pathname === item.href ? "page" : undefined}><em>{item.index}</em><span>{item.label}</span></Link>)}
+      </nav>
 
       {commandOpen && (
         <div className="obs-command-backdrop" role="presentation" onMouseDown={() => setCommandOpen(false)}>
