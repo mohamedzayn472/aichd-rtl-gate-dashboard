@@ -102,7 +102,7 @@ export default function PredictTool() {
             <span>Drop a .v / .sv source file or browse</span><small>Structural parsing occurs only when you run inference.</small>
           </div>
           <textarea aria-label="Verilog source code" value={code} onChange={(event) => { setCode(event.target.value); setUploadedFileName(null); }} spellCheck={false} />
-          <footer className="obs-source-actions"><button onClick={resetDraft} className="obs-text-button">Restore example</button><span>{code.length.toLocaleString()} characters</span><button id="btn-predict-run" onClick={runInference} disabled={isRunning} className="obs-run-button">{isRunning ? "Reading source…" : "Run live estimate →"}</button></footer>
+          <footer className="obs-source-actions"><button onClick={resetDraft} className="obs-text-button">Restore example</button><span>{code.length.toLocaleString()} characters</span><motion.button id="btn-predict-run" onClick={runInference} disabled={isRunning} className={`obs-run-button ${isRunning ? "is-running" : hasResult ? "is-complete" : ""}`} whileHover={reduceMotion || isRunning ? undefined : { y: -2, scale: 1.015 }} whileTap={reduceMotion || isRunning ? undefined : { scale: .97 }}><i aria-hidden="true" />{isRunning ? "Reading source…" : hasResult ? "Run another estimate →" : "Run live estimate →"}</motion.button></footer>
         </article>
 
         <article className={`obs-result-instrument ${isRunning ? "is-running" : ""}`}>

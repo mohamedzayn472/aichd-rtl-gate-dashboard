@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import trainingMetrics from "@/data/training_metrics.json";
 import faithfulnessReport from "@/data/faithfulness_report.json";
 import modelComparison from "@/data/model_comparison.json";
-import { PremiumMetricCard, PremiumReveal } from "@/components/observatory/PremiumInstruments";
+import { AnimatedDisclosure, PremiumMetricCard, PremiumReveal } from "@/components/observatory/PremiumInstruments";
 
 export default function RTLOverview() {
   const totalModules = trainingMetrics.split_sizes.train + trainingMetrics.split_sizes.val + trainingMetrics.split_sizes.test;
@@ -45,6 +45,7 @@ export default function RTLOverview() {
         <DashboardCard title="SIGNAL SPECTRUM" addon={<Badge variant="outline-success">LIVE ARTIFACT</Badge>} intent="success">
           <p className="obs-panel-title">TOP STRUCTURAL INFLUENCES</p>
           {topFeatures.map((feature, index) => <div className="obs-signal-row" key={feature.feature} style={{ "--signal-delay": `${index * 90}ms` } as React.CSSProperties}><span>{feature.feature}</span><i style={{ width: `${Math.max(12, (feature.importance / maxImportance) * 100)}%` }} /><b>{(feature.importance * 100).toFixed(1)}%</b></div>)}
+          <AnimatedDisclosure label="Inspect remaining model signals" summary={`${trainingMetrics.feature_importance.length - topFeatures.length} additional features`}>{trainingMetrics.feature_importance.slice(topFeatures.length).map((feature) => <div className="obs-signal-row obs-signal-row-compact" key={feature.feature}><span>{feature.feature}</span><i style={{ width: `${Math.max(7, (feature.importance / maxImportance) * 100)}%` }} /><b>{(feature.importance * 100).toFixed(1)}%</b></div>)}</AnimatedDisclosure>
         </DashboardCard>
         <DashboardCard title="TRUST SURFACE" addon={<Badge variant="outline">AUDITED</Badge>}>
           <div className="grid grid-cols-[1fr_auto] gap-5 items-center min-h-[188px]">
