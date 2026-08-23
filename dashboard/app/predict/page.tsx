@@ -213,39 +213,26 @@ export default function PredictTool() {
   return (
     <DashboardPageLayout
       header={{
-        title: "Live Inference",
-        description: "Verilog input / explainable gate estimation",
+        title: "Predict Tool",
+        description: "Inference Engine — AI Model Backend",
         icon: ProcessorIcon,
       }}
     >
-      <section className="observatory-hero">
-        <div className="observatory-hero-copy">
-          <span className="observatory-hero-kicker">INFERENCE INSTRUMENT / READY</span>
-          <h2>Turn RTL into an <em>evidence-backed</em> gate estimate.</h2>
-          <p>Paste a Verilog module or load a supported source file. The live estimator extracts structural signals, returns a predicted gate count, and surfaces the features that influence the result.</p>
-        </div>
-        <div className="observatory-orbital-readout" aria-label="Live inference instrument online">
-          <span>ENGINE</span>
-          <strong>RF</strong>
-          <small>14 FEATURES</small>
-        </div>
-      </section>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ── LEFT COLUMN — Inputs ── */}
         <div className="flex flex-col gap-6">
-          <Card className="observatory-signal-card">
-            <CardContent className="border border-primary/30 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+          <Card>
+            <CardContent className="bg-primary/10 border border-primary/30 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <div className="size-8 rounded bg-primary/20 border border-primary/40 flex items-center justify-center shrink-0">
                   <ProcessorIcon className="size-4 text-primary" />
                 </div>
                 <div>
                   <div className="text-sm font-display">
-                    Live Verilog analysis instrument
+                    AI Verilog Architect &amp; Optimization Agent
                   </div>
                   <div className="text-xs text-muted-foreground uppercase">
-                    Random Forest inference engine active
+                    ML Inference Engine Active
                   </div>
                 </div>
               </div>
@@ -263,7 +250,7 @@ export default function PredictTool() {
             </div>
           )}
 
-          <DashboardCard className="observatory-code-card" title="VERILOG CODE INPUT" addon={<Badge variant="outline">.v / .sv</Badge>}>
+          <DashboardCard title="VERILOG CODE INPUT" addon={<Badge variant="outline">.v / .sv</Badge>}>
             <div
               id="drop-zone"
               className={`mt-2 mb-3 border-2 border-dashed rounded-lg px-4 py-6 text-center cursor-pointer transition-colors ${
@@ -324,7 +311,7 @@ export default function PredictTool() {
               id="btn-predict-run"
               onClick={handleRunInference}
               disabled={isRunning}
-              className="w-full mt-3 py-3 px-4 rounded-lg bg-primary text-primary-foreground font-semibold text-sm shadow-[0_12px_28px_rgba(92,213,242,0.18)] hover:brightness-110 transition-[transform,filter,opacity] active:scale-[0.98] disabled:opacity-50"
+              className="w-full mt-3 py-3 px-4 rounded-md bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {isRunning ? "Running Live Inference..." : "⚡ Run Inference & Analysis"}
             </button>
@@ -360,7 +347,7 @@ export default function PredictTool() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="observatory-gate-readout rounded-xl p-6 text-center">
+                <div className="rounded-lg bg-primary/10 border border-primary/30 p-6 text-center">
                   <div className="text-xs uppercase text-muted-foreground tracking-wide font-medium">ESTIMATED GATE COUNT</div>
                   <div id="predict-gate-count" className="text-5xl font-display text-primary my-2">{gateCount}</div>
                   <div className="text-xs text-muted-foreground">Standard Logic Cells (NAND2 Equivalent)</div>
@@ -415,7 +402,7 @@ export default function PredictTool() {
 
       {/* ── FULL WIDTH BOTTOM ROW — AI Optimization ── */}
       {hasResult && (
-        <div className="observatory-optimization rounded-xl p-6 shadow-sm relative overflow-hidden mt-2">
+        <div className="rounded-lg border border-warning/50 bg-warning/10 p-6 shadow-sm relative overflow-hidden mt-2">
           {/* Decorative background glow */}
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-warning/20 rounded-full blur-3xl pointer-events-none"></div>
           

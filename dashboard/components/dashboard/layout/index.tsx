@@ -2,6 +2,7 @@ import React from "react";
 
 interface DashboardPageLayoutProps {
   children: React.ReactNode;
+
   header: {
     title: string;
     description?: string;
@@ -9,23 +10,28 @@ interface DashboardPageLayoutProps {
   };
 }
 
-export default function DashboardPageLayout({ children, header }: DashboardPageLayoutProps) {
+export default function DashboardPageLayout({
+  children,
+  header,
+}: DashboardPageLayoutProps) {
   return (
-    <div className="observatory-page flex flex-col w-full min-h-full">
-      <header className="observatory-page-header sticky top-header-mobile lg:top-4 z-20 flex items-center gap-3 md:gap-4 px-4 md:px-6 py-3.5 lg:py-4">
-        <div className="observatory-page-icon size-9 md:size-10 flex items-center justify-center shrink-0">
-          <header.icon className="size-5" />
+    <div className="flex flex-col relative w-full gap-1 min-h-full">
+      <div className="flex items-center lg:items-baseline gap-2.5 md:gap-4 px-4 md:px-6 py-3 md:pb-4 lg:pt-7 ring-2 ring-pop sticky top-header-mobile lg:top-0 bg-background z-10">
+        <div className="max-lg:contents rounded bg-primary size-7 md:size-9 flex items-center justify-center my-auto">
+          <header.icon className="ml-1 lg:ml-0 opacity-50 md:opacity-100 size-5" />
         </div>
-        <div className="min-w-0">
-          {header.description && <p className="observatory-page-eyebrow m-0">AICHD / {header.description}</p>}
-          <h1 className="observatory-page-title text-2xl lg:text-4xl leading-[0.92] m-0 mt-1">{header.title}</h1>
-        </div>
-        <div className="ml-auto hidden md:flex items-center gap-2 text-[10px] text-primary tracking-[0.12em] uppercase">
-          <span className="size-2 rounded-full bg-primary shadow-[0_0_14px_rgba(125,231,250,0.8)]" />
-          Instrument online
-        </div>
-      </header>
-      <div className="observatory-page-main min-h-full flex-1 flex flex-col gap-8 md:gap-10 px-1 md:px-2 py-6 md:py-8">{children}</div>
+        <h1 className="text-xl lg:text-4xl font-display leading-[1] mb-1">
+          {header.title}
+        </h1>
+        {header.description && (
+          <span className="ml-auto text-xs md:text-sm text-muted-foreground block">
+            {header.description}
+          </span>
+        )}
+      </div>
+      <div className="min-h-full flex-1 flex flex-col gap-8 md:gap-14 px-3 lg:px-6 py-6 md:py-10 ring-2 ring-pop bg-background">
+        {children}
+      </div>
     </div>
   );
 }
