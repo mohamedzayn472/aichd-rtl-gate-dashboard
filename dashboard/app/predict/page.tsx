@@ -1,12 +1,12 @@
 "use client";
-
+/* AICHD Glass Observatory: evidence-first RTL workbench with restrained spectral motion and safe source-level optimization guidance. */
 import { useEffect, useRef, useState } from "react";
 import DashboardPageLayout from "@/components/dashboard/layout";
 import ProcessorIcon from "@/components/icons/proccesor";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import NumberFlow from "@number-flow/react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, Clipboard, FileDown, FileText, Info, Lightbulb } from "lucide-react";
+import { ArrowRight, BadgeCheck, Check, Clipboard, Code2, FileDown, FileText, Info, Lightbulb, Sparkles } from "lucide-react";
 
 const DEMO_VERILOG = `module ripple_adder_4bit (
   input  wire [3:0] a,
@@ -25,7 +25,9 @@ endmodule`;
 type ShapItem = { feature?: string; importance?: number; raw_value?: number; [key: string]: unknown };
 type PredictApiResponse = { success?: boolean; error?: string; gateCount?: number; features?: Record<string, number>; shapValues?: ShapItem[] };
 type HistoryEntry = { id: string; name: string; timestamp: string; gateCount: number; topFeature: string; code: string };
-type InstrumentTab = "observation" | "explanation" | "evidence" | "report" | "history";
+type InstrumentTab = "observation" | "explanation" | "optimization" | "evidence" | "report" | "history";
+type OptimizationAssessment = { status: "optimized" | "rewrite-available"; title: string; summary: string; changes: string[]; optimizedCode?: string };
+type InferenceStage = "idle" | "capture" | "structure" | "evidence";
 
 function isValidVerilogFile(name: string) { const lower = name.toLowerCase(); return lower.endsWith(".v") || lower.endsWith(".sv"); }
 
@@ -38,6 +40,43 @@ function getExplanation(feature: string, importance?: number) {
   return { title: "Model evidence is led by a structural feature", summary: `The feature “${feature}” ${direction} the estimate most strongly in this run.`, action: "Use the returned attribution and extracted-feature sections below to identify which source constructs should be reviewed first." };
 }
 
+function getOptimizationAssessment(source: string, feature: string): OptimizationAssessment {
+  const transforms = [
+    { label: "Replaced an idempotent AND expression (`x & x`) with `x`.", pattern: /\b([A-Za-z_]\w*(?:\s*\[[^\]]+\])?)\s*&\s*\1/g },
+    { label: "Replaced an idempotent OR expression (`x | x`) with `x`.", pattern: /\b([A-Za-z_]\w*(?:\s*\[[^\]]+\])?)\s*\|\s*\1/g },
+    { label: "Replaced an idempotent XOR expression (`x ^ x`) with `x`.", pattern: /\b([A-Za-z_]\w*(?:\s*\[[^\]]+\])?)\s*\^\s*\1/g },
+    { label: "Removed a double inversion (`~(~x)`).", pattern: /~\s*\(\s*~\s*([A-Za-z_]\w*(?:\s*\[[^\]]+\])?)\s*\)/g },
+  ];
+
+  let optimizedCode = source;
+  const changes: string[] = [];
+  for (const transform of transforms) {
+    let replacements = 0;
+    optimizedCode = optimizedCode.replace(transform.pattern, (_match, signal: string) => {
+      replacements += 1;
+      return signal;
+    });
+    if (replacements > 0) changes.push(`${transform.label} ${replacements} occurrence${replacements === 1 ? "" : "s"} changed.`);
+  }
+
+  if (changes.length > 0) {
+    return {
+      status: "rewrite-available",
+      title: "A safe source-level rewrite is available",
+      summary: `AICHD found ${changes.length} deterministic Boolean identity ${changes.length === 1 ? "pattern" : "patterns"} in the submitted RTL. The corrected source below is offered because the rewrite preserves the local expression; the live model’s primary signal is “${feature}”.`,
+      changes,
+      optimizedCode,
+    };
+  }
+
+  return {
+    status: "optimized",
+    title: "Optimized for automatic source checks",
+    summary: `No safe Boolean-identity rewrite was detected in this source. For the automatic checks AICHD can prove locally, the submitted RTL is optimized. The live model’s primary signal is “${feature}”; technology-specific synthesis may still produce different implementation choices.`,
+    changes: ["No deterministic, semantics-preserving rewrite was found in the submitted source."],
+  };
+}
+
 export default function PredictTool() {
   const [code, setCode] = useState(DEMO_VERILOG);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
@@ -45,12 +84,14 @@ export default function PredictTool() {
   const [isRunning, setIsRunning] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasResult, setHasResult] = useState(false);
+  const [runStage, setRunStage] = useState<InferenceStage>("idle");
   const [gateCount, setGateCount] = useState(0);
   const [shapData, setShapData] = useState<ShapItem[]>([]);
   const [features, setFeatures] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState<InstrumentTab>("observation");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [reportAction, setReportAction] = useState<"idle" | "copied" | "downloaded">("idle");
+  const [optimizationAction, setOptimizationAction] = useState<"idle" | "copied">("idle");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reduceMotion = useReducedMotion();
 
@@ -70,7 +111,10 @@ export default function PredictTool() {
   };
 
   const runInference = async () => {
-    setIsRunning(true); setErrorMsg(null); setReportAction("idle");
+    setIsRunning(true); setErrorMsg(null); setReportAction("idle"); setOptimizationAction("idle");
+    setRunStage("capture");
+    const structureTimer = window.setTimeout(() => setRunStage("structure"), 520);
+    const evidenceTimer = window.setTimeout(() => setRunStage("evidence"), 1400);
     try {
       const response = await fetch("/api/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
       const data = await response.json() as PredictApiResponse;
@@ -81,19 +125,21 @@ export default function PredictTool() {
       const entry: HistoryEntry = { id: `${Date.now()}`, name: uploadedFileName ?? "untitled_module.v", timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), gateCount: nextGateCount, topFeature: nextShap[0]?.feature ?? "structural evidence", code };
       setHistory((current) => [entry, ...current.filter((item) => item.code !== code)].slice(0, 6));
     } catch (error) { setHasResult(false); setErrorMsg(error instanceof Error ? error.message : "The inference request could not be completed."); }
-    finally { setIsRunning(false); }
+    finally { window.clearTimeout(structureTimer); window.clearTimeout(evidenceTimer); setIsRunning(false); setRunStage("idle"); }
   };
 
-  const resetDraft = () => { setCode(DEMO_VERILOG); setUploadedFileName(null); setErrorMsg(null); setHasResult(false); setReportAction("idle"); };
+  const resetDraft = () => { setCode(DEMO_VERILOG); setUploadedFileName(null); setErrorMsg(null); setHasResult(false); setReportAction("idle"); setOptimizationAction("idle"); };
   const topFeature = shapData[0]?.feature ?? "Awaiting analysis";
   const topImpact = shapData[0]?.importance;
   const totalInputs = features.num_inputs ?? features.struct_num_inputs ?? 0;
   const totalOutputs = features.num_outputs ?? features.struct_num_outputs ?? 0;
   const totalWires = features.num_wires ?? features.struct_num_wires ?? 0;
   const explanation = getExplanation(topFeature, topImpact);
+  const optimization = getOptimizationAssessment(code, topFeature);
+  const stageLabel = runStage === "capture" ? "Reading source" : runStage === "structure" ? "Extracting structure" : runStage === "evidence" ? "Calibrating evidence" : "Ready";
   const reportText = hasResult ? [
     "# AICHD RTL Gate Estimation Report", `Generated: ${new Date().toLocaleString()}`, `Source: ${uploadedFileName ?? "untitled_module.v"}`, "",
-    "## Gate estimate", `${gateCount} NAND2-equivalent gates`, "", "## Detailed explanation", explanation.title, explanation.summary, `Review guidance: ${explanation.action}`, "",
+    "## Gate estimate", `${gateCount} NAND2-equivalent gates`, "", "## Detailed explanation", explanation.title, explanation.summary, `Review guidance: ${explanation.action}`, "", "## RTL optimization assessment", optimization.title, optimization.summary, ...optimization.changes.map((change) => `- ${change}`), "",
     "## Extracted structure", ...Object.entries(features).map(([key, value]) => `- ${key}: ${value}`), "", "## Returned feature contributions", ...shapData.map((item) => `- ${item.feature ?? "feature"}: ${typeof item.importance === "number" ? item.importance.toFixed(6) : "n/a"}`), "",
     "## Interpretation boundary", "This report explains the current AICHD model estimate from source-derived features. It is not a substitute for technology-mapped synthesis or physical implementation analysis.",
   ].join("\n") : "";
@@ -105,10 +151,12 @@ export default function PredictTool() {
     link.href = url; link.download = `${(uploadedFileName ?? "aichd-inference").replace(/\.(v|sv)$/i, "")}-aichd-report.md`; link.click(); URL.revokeObjectURL(url); setReportAction("downloaded");
   };
   const copyReport = async () => { if (!reportText) return; try { await navigator.clipboard.writeText(reportText); setReportAction("copied"); } catch { setReportAction("idle"); } };
-  const selectTab = (tab: InstrumentTab) => { setActiveTab(tab); setReportAction("idle"); };
+  const copyOptimizedCode = async () => { if (!optimization.optimizedCode) return; try { await navigator.clipboard.writeText(optimization.optimizedCode); setOptimizationAction("copied"); } catch { setOptimizationAction("idle"); } };
+  const useOptimizedCode = () => { if (!optimization.optimizedCode) return; setCode(optimization.optimizedCode); setUploadedFileName(null); setHasResult(false); setOptimizationAction("idle"); setActiveTab("observation"); };
+  const selectTab = (tab: InstrumentTab) => { setActiveTab(tab); setReportAction("idle"); setOptimizationAction("idle"); };
 
   return <DashboardPageLayout header={{ title: "Inference workbench", description: "LIVE VERILOG / MODEL EVIDENCE", icon: ProcessorIcon }}>
-    <section className="obs-inference-intro"><div><p className="obs-eyebrow">OBSERVATION MODE / SOURCE TO SIGNAL</p><h2>Make the next<br /><em>estimate observable.</em></h2><p>Load a Verilog source, run the current model, and retain the useful evidence in a local Observatory history. No preview-only values are used in this workbench.</p></div><div className="obs-inference-status"><span>API CHANNEL</span><b>{isRunning ? "Processing" : "Ready"}</b><small>{history.length} local observations retained</small><i /></div></section>
+    <section className="obs-inference-intro"><div><p className="obs-eyebrow">OBSERVATION MODE / SOURCE TO SIGNAL</p><h2>Make the next<br /><em>estimate observable.</em></h2><p>Load a Verilog source, run the current model, and retain the useful evidence in a local Observatory history. No preview-only values are used in this workbench.</p></div><div className={`obs-inference-status ${isRunning ? "is-acquiring" : ""}`}><span>API CHANNEL</span><b>{isRunning ? "Acquiring" : "Ready"}</b><small>{isRunning ? stageLabel : `${history.length} local observations retained`}</small><i /></div></section>
     {errorMsg && <div className="obs-error" role="alert"><b>Inference signal interrupted</b><span>{errorMsg}</span></div>}
 
     <section className="obs-workbench">
@@ -124,10 +172,12 @@ export default function PredictTool() {
 
       <article className={`obs-result-instrument ${isRunning ? "is-running" : ""}`}>
         <header className="obs-instrument-header"><div><span>02 / EVIDENCE INSTRUMENT</span><b>{hasResult ? "Live observation complete" : "Awaiting source signal"}</b></div><small>{hasResult ? "saved locally" : "no result yet"}</small></header>
-        <div className="obs-result-tabs" role="tablist" aria-label="Inference results">{(["observation", "explanation", "evidence", "report", "history"] as InstrumentTab[]).map((tab) => <button key={tab} role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? "active" : ""} onClick={() => selectTab(tab)}>{activeTab === tab && <motion.i layoutId="obs-result-tab-indicator" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}<span>{tab}</span></button>)}</div>
+        {isRunning && <motion.div className="obs-acquisition-rail" initial={reduceMotion ? false : { opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}><span>LIVE ACQUISITION</span>{(["capture", "structure", "evidence"] as const).map((stage, index) => <div key={stage} className={runStage === stage ? "active" : index < ["capture", "structure", "evidence"].indexOf(runStage as "capture" | "structure" | "evidence") ? "complete" : ""}><i />{stage === "capture" ? "Source" : stage === "structure" ? "Structure" : "Evidence"}</div>)}</motion.div>}
+        <div className="obs-result-tabs" role="tablist" aria-label="Inference results">{(["observation", "explanation", "optimization", "evidence", "report", "history"] as InstrumentTab[]).map((tab) => <button key={tab} role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? "active" : ""} onClick={() => selectTab(tab)}>{activeTab === tab && <motion.i layoutId="obs-result-tab-indicator" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}<span>{tab}</span></button>)}</div>
         <AnimatePresence mode="wait">
           {activeTab === "observation" && (hasResult ? <motion.div key="observation-result" className="obs-live-result" initial={false} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 290, damping: 28 }}><div className="obs-gate-orb"><span>ESTIMATED GATES</span><b><NumberFlow value={gateCount} /></b><small>NAND2 EQUIVALENT</small></div><div className="obs-result-readout"><div><span>TOP INFLUENCE</span><b>{topFeature}</b><small>{typeof topImpact === "number" ? `${topImpact >= 0 ? "+" : ""}${topImpact.toFixed(4)} contribution` : "Feature attribution returned"}</small></div><div className="obs-structural-row"><span><b><NumberFlow value={totalInputs} /></b> inputs</span><span><b><NumberFlow value={totalOutputs} /></b> outputs</span><span><b><NumberFlow value={totalWires} /></b> wires</span></div></div></motion.div> : <EmptyResult key="observation-empty" title="Source instrument ready." detail="Run an estimate to open the gate-count and structural evidence surfaces." />)}
           {activeTab === "explanation" && (hasResult ? <motion.div key="explanation-result" className="obs-explanation-view" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}><div className="obs-explanation-lead"><Lightbulb /><div><span>MODEL-LEVEL EXPLANATION</span><h3>{explanation.title}</h3><p>{explanation.summary}</p></div></div><div className="obs-explanation-action"><Info /><div><b>Recommended next check</b><p>{explanation.action}</p></div></div><div className="obs-feature-detail"><div><span>EXTRACTED STRUCTURE</span><small>{Object.keys(features).length} values returned</small></div><div className="obs-feature-detail-grid">{Object.entries(features).map(([key, value]) => <div key={key}><span>{key}</span><b>{value}</b></div>)}</div></div></motion.div> : <EmptyResult key="explanation-empty" title="Detailed explanation will appear here." detail="Run an estimate to connect the top feature contribution with extracted RTL structure." />)}
+          {activeTab === "optimization" && (hasResult ? <motion.div key="optimization-result" className={`obs-optimization-view ${optimization.status}`} initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}><div className="obs-optimization-lead">{optimization.status === "rewrite-available" ? <Sparkles /> : <BadgeCheck />}<div><span>RTL OPTIMIZATION ASSESSMENT</span><h3>{optimization.title}</h3><p>{optimization.summary}</p></div></div>{optimization.status === "rewrite-available" && optimization.optimizedCode ? <><div className="obs-code-comparison"><section><header><span>SUBMITTED RTL</span><Code2 /></header><pre>{code}</pre></section><ArrowRight className="obs-code-arrow" aria-hidden="true" /><section className="obs-corrected-code"><header><span>CORRECTED RTL</span><BadgeCheck /></header><pre>{optimization.optimizedCode}</pre></section></div><div className="obs-optimization-actions"><div><b>What changed</b>{optimization.changes.map((change) => <p key={change}>{change}</p>)}</div><div><button onClick={copyOptimizedCode}>{optimizationAction === "copied" ? <Check /> : <Clipboard />}{optimizationAction === "copied" ? "Copied" : "Copy corrected code"}</button><button onClick={useOptimizedCode}>Use corrected source <ArrowRight /></button></div></div><small className="obs-optimization-boundary">The corrected RTL is limited to deterministic local Boolean identities. Re-run inference and validate with synthesis before accepting any area or timing outcome.</small></> : <div className="obs-optimized-state"><BadgeCheck /><div><b>No automatic rewrite is needed</b><p>{optimization.changes[0]}</p></div></div>}</motion.div> : <EmptyResult key="optimization-empty" title="Optimization guidance will appear here." detail="Run a live estimate to receive an evidence-aware source assessment." />)}
           {activeTab === "evidence" && (hasResult ? <motion.div key="evidence-result" className="obs-evidence-view" initial={false} animate={{ opacity: 1, y: 0 }}><p>Positive values increase the estimated gate count; negative values reduce it.</p><div className="h-[260px] w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={shapData} layout="vertical" margin={{ left: 4, right: 12 }}><CartesianGrid strokeDasharray="3 3" stroke="rgba(160,230,247,.18)" /><XAxis type="number" stroke="#8bb5c4" tick={{ fontSize: 10 }} /><YAxis dataKey="feature" type="category" width={125} tick={{ fontSize: 10, fill: "#c9e9f0" }} /><Tooltip contentStyle={{ backgroundColor: "rgba(11, 26, 56, .92)", backdropFilter: "blur(16px)", borderColor: "rgba(160,230,247,.35)", borderRadius: "12px" }} /><Bar dataKey="importance" fill="#8be8f6" radius={[0, 6, 6, 0]} animationDuration={reduceMotion ? 0 : 1200} animationEasing="ease-out" /></BarChart></ResponsiveContainer></div></motion.div> : <EmptyResult key="evidence-empty" title="Evidence will appear here." detail="The chart is populated only after a successful live inference." />)}
           {activeTab === "report" && (hasResult ? <motion.div key="report-result" className="obs-report-view" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}><div className="obs-report-heading"><div><FileText /><span>INFERENCE REPORT</span><h3>{uploadedFileName ?? "untitled_module.v"}</h3><p>Generated from this live result and held in your browser until you copy or download it.</p></div><div className="obs-report-actions"><button onClick={copyReport}>{reportAction === "copied" ? <Check /> : <Clipboard />}{reportAction === "copied" ? "Copied" : "Copy"}</button><button onClick={downloadReport}><FileDown />{reportAction === "downloaded" ? "Downloaded" : "Download .md"}</button></div></div><div className="obs-report-preview"><p>Gate estimate: <b>{gateCount} NAND2-equivalent gates</b></p><p>Primary driver: <b>{topFeature}</b></p><p>{explanation.summary}</p><small>The report records returned model data and explains the estimate; it does not claim physical synthesis equivalence.</small></div></motion.div> : <EmptyResult key="report-empty" title="Your inference report will appear here." detail="Run the live model first, then copy or download a report created from returned evidence." />)}
           {activeTab === "history" && <motion.div key="history" className="obs-history-view" initial={false} animate={{ opacity: 1, y: 0 }}>{history.length === 0 ? <EmptyResult title="No local observations yet." detail="Completed estimates are retained in this browser for quick source restoration." /> : <><div className="obs-history-heading"><span>Recent local results</span><button className="obs-text-button" onClick={() => setHistory([])}>Clear history</button></div>{history.map((item) => <button className="obs-history-item" key={item.id} onClick={() => { setCode(item.code); setUploadedFileName(item.name); setActiveTab("observation"); setHasResult(false); }}><span>{item.timestamp}</span><b>{item.name}</b><small>{item.gateCount} gates · {item.topFeature}</small><em>Restore →</em></button>)}</>}</motion.div>}

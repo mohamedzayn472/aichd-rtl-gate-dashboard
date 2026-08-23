@@ -1,9 +1,9 @@
 "use client";
-
+/* AICHD Glass Observatory shell: preserve the technical observatory identity; motion is atmospheric, brief, and never blocks navigation. */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 const navigation = [
   { href: "/", label: "Overview", index: "01" },
@@ -18,6 +18,9 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
   const router = useRouter();
   const [commandOpen, setCommandOpen] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [arrivalVisible, setArrivalVisible] = useState(true);
+  const systemReducedMotion = useReducedMotion();
+  const motionReduced = reduceMotion || systemReducedMotion;
 
   useEffect(() => {
     const stored = window.localStorage.getItem("aichd-reduce-motion");
@@ -28,6 +31,12 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
     document.documentElement.classList.toggle("obs-motion-reduced", reduceMotion);
     window.localStorage.setItem("aichd-reduce-motion", String(reduceMotion));
   }, [reduceMotion]);
+
+  useEffect(() => {
+    if (motionReduced) { setArrivalVisible(false); return; }
+    const timer = window.setTimeout(() => setArrivalVisible(false), 1320);
+    return () => window.clearTimeout(timer);
+  }, [motionReduced]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -48,6 +57,9 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
 
   return (
     <div className="obs-shell">
+      <AnimatePresence>
+        {arrivalVisible && !motionReduced && <motion.div className="obs-arrival" aria-hidden="true" initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.018, transition: { duration: .34, ease: [0.22, 1, 0.36, 1] } }}><div className="obs-arrival-grid" /><motion.div className="obs-arrival-signal" initial={{ scale: .76, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}><i /><i /><i /><b>AI</b></motion.div><div className="obs-arrival-copy"><span>OBSERVATORY LINK</span><b>AICHD</b><small>Synchronizing inference instruments</small></div><motion.div className="obs-arrival-progress" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.08, ease: [0.22, 1, 0.36, 1] }} /></motion.div>}
+      </AnimatePresence>
       <div className="obs-starfield" aria-hidden="true" />
       <div className="obs-ambient-orb obs-ambient-indigo" aria-hidden="true" />
       <div className="obs-ambient-orb obs-ambient-cyan" aria-hidden="true" />
