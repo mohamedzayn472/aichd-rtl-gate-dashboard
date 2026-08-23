@@ -9,7 +9,7 @@
 ## Corrected Glass Observatory rebuild
 
 - [x] Revert the published reskin so the stable dashboard is restored while the new application is built.
-- [ ] Recreate the approved Glass Observatory structure with a new navigation model, Observatory command surface, and interactive instrument panels.
-- [ ] Connect the new estimation workspace to the existing `/api/predict` endpoint and present live evidence instead of preview-only mock data.
-- [ ] Add practical production features including code persistence, source-file import, results history, and accessible motion controls.
+- [x] Recreate the approved Glass Observatory structure with a new navigation model, Observatory command surface, and interactive instrument panels.
+- [x] Connect the new estimation workspace to the existing `/api/predict` endpoint and present live evidence instead of preview-only mock data.
+- [x] Add practical production features including code persistence, source-file import, results history, and accessible motion controls.
 - [ ] Verify, publish, and confirm the rebuilt dashboard on the public Render URL.
