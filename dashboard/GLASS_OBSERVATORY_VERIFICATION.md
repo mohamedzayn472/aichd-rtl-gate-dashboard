@@ -21,3 +21,9 @@ During local interaction testing, the route-level opacity transition was removed
 The refined local inference run presented the intended non-blocking processing state: the live API channel changed to Processing, the action button changed to “Reading source…”, and the instrument panels displayed the shimmer loading layer without obscuring available controls.
 
 The completion test identified that initial opacity states in the animated result panels could delay visibility when decorative motion was disabled. Those initial opacity states were removed while retaining animated numeric transitions, active-tab movement, chart bars, signal bars, hover response, and loading feedback.
+
+The public Render deployment was opened after the premium commit and served both the refined Observation Deck and the premium Inference Workbench with the new optical surface hierarchy and active navigation treatment.
+
+The public workbench accepted the example source and entered the expected premium loading state, showing the live API channel as Processing and the action label as “Reading source…”.
+
+The public premium result surface then displayed **19** estimated NAND2-equivalent gates, `complex_chars` as the top influence, and **3** inputs, **2** outputs, and **6** wires. The result remained fully visible after the loading state completed.
