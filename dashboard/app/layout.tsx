@@ -31,57 +31,39 @@ const isV0 = process.env["VERCEL_URL"]?.includes("vusercontent.net") ?? false;
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: {
-    template: "%s – RTL Gate Estimator",
-    default: "RTL Gate Count Estimator — Explainable AI Platform",
+    template: "%s – AICHD Observatory",
+    default: "AICHD Observatory — Explainable RTL Gate Estimation",
   },
-  description:
-    "RTL Gate Count Estimator & Explainable AI Platform. Predict, analyze, and verify gate counts from Verilog RTL designs with SHAP-based explanations.",
-    generator: 'v0.app'
+  description: "AICHD is an explainable RTL gate-estimation workspace for Verilog inference, model evidence, and structural analysis.",
+  generator: "v0.app",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark">
       <head>
-        <link
-          rel="preload"
-          href="/fonts/Rebels-Fett.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
+        <link rel="preload" href="/fonts/Rebels-Fett.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
-      <body
-        className={`${rebelGrotesk.variable} ${robotoMono.variable} antialiased`}
-      >
+      <body className={`${rebelGrotesk.variable} ${robotoMono.variable} antialiased`}>
         <V0Provider isV0={isV0}>
           <SidebarProvider>
-            {/* Mobile Header - only visible on mobile */}
-            <MobileHeader mockData={mockData} />
-
-            {/* Desktop Layout */}
-            <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-gap lg:px-sides">
-              <div className="hidden lg:block col-span-2 top-0 relative">
-                <DashboardSidebar />
+            <div className="app-observatory-shell">
+              <MobileHeader mockData={mockData} />
+              <div className="w-full max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-[15.5rem_minmax(0,1fr)_19rem] gap-0">
+                <aside className="hidden lg:block observatory-sidebar-wrap">
+                  <DashboardSidebar />
+                </aside>
+                <main className="min-w-0 px-3 pb-3 lg:px-0 lg:py-4">{children}</main>
+                <aside className="hidden lg:block observatory-right-rail">
+                  <div className="space-y-gap min-h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sticky top-4 overflow-clip">
+                    <Widget />
+                    <Notifications initialNotifications={mockData.notifications} />
+                    <Chat />
+                  </div>
+                </aside>
               </div>
-              <div className="col-span-1 lg:col-span-7">{children}</div>
-              <div className="col-span-3 hidden lg:block">
-                <div className="space-y-gap py-sides min-h-screen max-h-screen sticky top-0 overflow-clip">
-                  <Widget />
-                  <Notifications
-                    initialNotifications={mockData.notifications}
-                  />
-                  <Chat />
-                </div>
-              </div>
+              <MobileChat />
             </div>
-
-            {/* Mobile Chat - floating CTA with drawer */}
-            <MobileChat />
           </SidebarProvider>
         </V0Provider>
       </body>
