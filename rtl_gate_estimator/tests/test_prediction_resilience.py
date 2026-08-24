@@ -60,7 +60,7 @@ def test_optimizer_preserves_ml_prediction_when_synthesis_fails(tmp_path, monkey
     input_path.write_text("module unresolved(input a, output y); unresolved_cell u(); endmodule\n", encoding="utf-8")
 
     class NoTransformRules:
-        def __init__(self, *args, **kwargs):
+        def __init__(self):
             pass
 
         def optimize(self, code, top_module, target):

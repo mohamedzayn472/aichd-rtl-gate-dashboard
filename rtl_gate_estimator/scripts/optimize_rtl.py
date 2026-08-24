@@ -75,7 +75,12 @@ def main():
     from scripts.equivalence_checker import EquivalenceChecker
 
     # Initialize modules
-    rules_engine = RulesEngine(use_llm=False)  # User requested NO API KEY
+    # Keep the no-LLM configuration when supported, while remaining compatible
+    # with the deployed rule engine that predates the optional constructor flag.
+    try:
+        rules_engine = RulesEngine(use_llm=False)
+    except TypeError:
+        rules_engine = RulesEngine()
     synth_runner = get_synthesis_runner()
     equiv_checker = EquivalenceChecker()
 
