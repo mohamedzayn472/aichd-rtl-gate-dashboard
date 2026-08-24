@@ -52,6 +52,21 @@ def test_yosys_runner_uses_bom_free_private_copy(tmp_path, monkeypatch):
     assert not captured["yosys_source"].exists()
 
 
+def test_yosys_stats_parser_reads_standard_cell_count():
+    """Yosys `stat` reports cells as `Number of cells: N` in standard output."""
+    runner = YosysRunner.__new__(YosysRunner)
+    output = """\
+Printing statistics.
+=== public_synth ===
+
+   Number of wires:                  3
+   Number of cells:                  1
+     $_AND_                          1
+"""
+
+    assert runner._parse_stat(output) == 1
+
+
 def test_optimizer_preserves_ml_prediction_when_synthesis_fails(tmp_path, monkeypatch, capsys):
     """Synthesis diagnostics are supplemental; inference remains a valid response."""
     from scripts import optimize_rtl

@@ -112,6 +112,10 @@ class YosysRunner(SynthesisRunner):
         stat_section_start = text.rfind(stat_marker)
         stat_text = text[stat_section_start:] if stat_section_start != -1 else text
 
+        standard_match = re.search(r'Number of cells:\s*(\d+)', stat_text)
+        if standard_match:
+            return int(standard_match.group(1))
+
         hier_match = re.search(
             r'=== design hierarchy ===.*?Count including submodules\.\s*\|\s*(\d+)',
             stat_text,
