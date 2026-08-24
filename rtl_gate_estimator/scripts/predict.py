@@ -59,7 +59,8 @@ def predict_single(rtl_path: Path, config: dict, model_path: Path, use_shap: boo
         logger.error(f"RTL file not found: {rtl_path}")
         sys.exit(1)
 
-    with open(rtl_path, 'r') as f:
+    # utf-8-sig removes a leading UTF-8 BOM without altering normal UTF-8 RTL.
+    with open(rtl_path, 'r', encoding='utf-8-sig') as f:
         verilog_content = f.read()
 
     logger.info(f"Loaded RTL file: {rtl_path.name}")

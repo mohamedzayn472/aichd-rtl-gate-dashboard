@@ -29,7 +29,10 @@ class RTLFeatureExtractor:
     @staticmethod
     def _strip_comments(verilog_content: str) -> str:
         """Remove line and block comments before applying structural regexes."""
-        content = re.sub(r'//[^\n]*', '', verilog_content)
+        # A UTF-8 BOM is not Verilog syntax. Normalise it at the content
+        # boundary so direct callers and file-based inference agree.
+        normalized = verilog_content[1:] if verilog_content.startswith('\ufeff') else verilog_content
+        content = re.sub(r'//[^\n]*', '', normalized)
         return re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
 
     @staticmethod

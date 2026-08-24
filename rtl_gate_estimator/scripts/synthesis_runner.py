@@ -38,7 +38,7 @@ class YosysRunner(SynthesisRunner):
             self.yosys_bin = None
             logger.error(f"Yosys not found: {e}")
 
-    def run_synthesis(self, verilog_file: str, top_module: str = "") -> Dict[str, Any]:
+    def run_synthesis(self, verilog_file: str, top_module: str = "", target: str = "asic") -> Dict[str, Any]:
         if not self.yosys_bin:
             return {"error": "Yosys not available in environment."}
 
@@ -46,16 +46,43 @@ class YosysRunner(SynthesisRunner):
         if not top_module:
             top_module = verilog_path.stem
 
-        script_path = self.work_dir / f"synth_{top_module}.ys"
+        import uuid
+        uid = uuid.uuid4().hex[:8]
+        bom_free_path = None
+        yosys_input_path = verilog_path
+        try:
+            source_bytes = verilog_path.read_bytes()
+            if source_bytes.startswith(b'\xef\xbb\xbf'):
+                # Yosys treats a BOM as an invalid first Verilog token. Keep
+                # the caller's file untouched and synthesize a private copy.
+                bom_free_path = self.work_dir / f"source_{top_module}_{uid}.v"
+                bom_free_path.write_bytes(source_bytes[3:])
+                yosys_input_path = bom_free_path
+        except OSError as exc:
+            return {"error": f"Unable to prepare RTL for synthesis: {exc}"}
+
+        script_path = self.work_dir / f"synth_{top_module}_{uid}.ys"
         with open(script_path, "w", encoding="utf-8") as f:
-            f.write(f'read_verilog "{str(verilog_path).replace(chr(92), "/")}"\n')
+            f.write(f'read_verilog -sv "{str(yosys_input_path).replace(chr(92), "/")}"\n')
             f.write(f'hierarchy -check -top {top_module}\n')
-            f.write('synth\n')
+            if target == "xilinx":
+                f.write('synth_xilinx -flatten\n')
+            elif target == "intel":
+                f.write('synth_intel -family max10\n')
+            else:
+                f.write('synth\n')
             f.write('stat\n')
             f.write('ltp\n') # Longest topological path for logic levels
 
         cmd = f'"{self.yosys_bin}" -s "{script_path}"'
         returncode, stdout, stderr = CommandExecutor.run_command(cmd, timeout=300)
+
+        for temporary_path in (script_path, bom_free_path):
+            try:
+                if temporary_path and temporary_path.exists():
+                    temporary_path.unlink()
+            except OSError:
+                pass
         output = stdout + "\n" + stderr
 
         if returncode != 0:

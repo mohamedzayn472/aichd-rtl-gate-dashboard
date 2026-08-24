@@ -34,16 +34,36 @@ class EquivalenceChecker:
         baseline_path = Path(baseline_file).resolve()
         optimized_path = Path(optimized_file).resolve()
 
-        script_path = self.work_dir / f"equiv_{top_module}.ys"
+        import uuid
+        uid = uuid.uuid4().hex[:8]
+        bom_free_paths = []
+
+        def yosys_ready_path(source_path: Path, label: str) -> Path:
+            source_bytes = source_path.read_bytes()
+            if not source_bytes.startswith(b'\xef\xbb\xbf'):
+                return source_path
+            normalized_path = self.work_dir / f"equiv_source_{top_module}_{uid}_{label}.v"
+            normalized_path.write_bytes(source_bytes[3:])
+            bom_free_paths.append(normalized_path)
+            return normalized_path
+
+        try:
+            baseline_yosys_path = yosys_ready_path(baseline_path, "baseline")
+            optimized_yosys_path = yosys_ready_path(optimized_path, "optimized")
+        except OSError as exc:
+            logger.warning(f"Equivalence source preparation failed for {top_module}: {exc}")
+            return "UNVERIFIED"
+
+        script_path = self.work_dir / f"equiv_{top_module}_{uid}.ys"
         with open(script_path, "w", encoding="utf-8") as f:
             # Load optimized (gold) and baseline (gate)
             # In equiv_make, gold is the first, gate is the second. We map baseline as gold, optimized as gate.
-            f.write(f'read_verilog "{str(baseline_path).replace(chr(92), "/")}"\n')
+            f.write(f'read_verilog "{str(baseline_yosys_path).replace(chr(92), "/")}"\n')
             f.write(f'hierarchy -check -top {top_module}\n')
             f.write('prep -flatten\n')
             f.write('splitnets -ports; design -stash gold\n')
             
-            f.write(f'read_verilog "{str(optimized_path).replace(chr(92), "/")}"\n')
+            f.write(f'read_verilog "{str(optimized_yosys_path).replace(chr(92), "/")}"\n')
             f.write(f'hierarchy -check -top {top_module}\n')
             f.write('prep -flatten\n')
             f.write('splitnets -ports; design -stash gate\n')
@@ -58,6 +78,13 @@ class EquivalenceChecker:
 
         cmd = f'"{self.yosys_bin}" -s "{script_path}"'
         returncode, stdout, stderr = CommandExecutor.run_command(cmd, timeout=300)
+
+        for temporary_path in [script_path, *bom_free_paths]:
+            try:
+                if temporary_path.exists():
+                    temporary_path.unlink()
+            except OSError:
+                pass
         output = stdout + "\n" + stderr
 
         # Parse equiv_status output

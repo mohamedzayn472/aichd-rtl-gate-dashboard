@@ -32,6 +32,8 @@ def main():
     parser.add_argument("--input", required=True, help="Input RTL file")
     parser.add_argument("--target", default="asic", help="Target architecture (fpga/asic)")
     parser.add_argument("--top", default="", help="Top module name (optional)")
+    parser.add_argument("--no-shap", action="store_true", help="Disable SHAP explanation (faster).")
+    parser.add_argument("--json", action="store_true", help="Output results as JSON.")
     args = parser.parse_args()
 
     input_path = Path(args.input)
@@ -39,7 +41,8 @@ def main():
         print(json.dumps({"error": f"Input file not found: {args.input}"}))
         sys.exit(1)
 
-    with open(input_path, "r", encoding="utf-8") as f:
+    # Accept editor-created UTF-8 BOM files while retaining normal UTF-8 input.
+    with open(input_path, "r", encoding="utf-8-sig") as f:
         original_code = f.read()
 
     import re
@@ -57,7 +60,7 @@ def main():
         rtl_path=input_path,
         config=config,
         model_path=Path("models/model.pkl"),
-        use_shap=True,
+        use_shap=not args.no_shap,
         is_json=True
     )
     
@@ -72,40 +75,42 @@ def main():
     from scripts.equivalence_checker import EquivalenceChecker
 
     # Initialize modules
-    rules_engine = RulesEngine()
+    rules_engine = RulesEngine(use_llm=False)  # User requested NO API KEY
     synth_runner = get_synthesis_runner()
     equiv_checker = EquivalenceChecker()
 
     # 1. Optimization Generation (Rules Engine)
-    optimized_code, transformations = rules_engine.optimize(original_code)
+    optimized_code, transformations = rules_engine.optimize(original_code, top_module, target=args.target)
     
     optimizable = len(transformations) > 0
 
     if not optimizable:
-        # If no transformations applied, just run baseline synthesis and return
-        baseline_ppa = synth_runner.run_synthesis(str(input_path), top_module)
-        if "error" in baseline_ppa:
-            print(json.dumps({"error": baseline_ppa["error"]}))
-            sys.exit(1)
-
+        # Synthesis is best-effort PPA evidence. A synthesis failure must not
+        # discard the already-computed ML prediction and SHAP evidence.
+        baseline_ppa = synth_runner.run_synthesis(str(input_path), top_module, target=args.target)
         result = {
             "detected_hdl": "verilog",
             "optimizable": False,
             "optimized_code": None,
             "diff": "",
             "functional_equivalence": "N/A",
-            "impact": {
+            "impact": None,
+            "ml_prediction": ml_prediction,
+            "transformations_applied": [],
+            "warnings": ["No safe optimizations found. Code is already efficient or rules didn't match."]
+        }
+        if "error" in baseline_ppa:
+            result["synthesis_diagnostics"] = {"baseline": baseline_ppa["error"]}
+            result["warnings"].append("Baseline synthesis failed; the ML gate estimate and feature evidence remain available.")
+        else:
+            result["impact"] = {
                 "area": {
                     "cell_count": { "baseline": baseline_ppa["area"]["cell_count"], "optimized": baseline_ppa["area"]["cell_count"], "delta_pct": 0.0 }
                 },
                 "timing": {
                     "logic_levels": { "baseline": baseline_ppa["timing"]["logic_levels"], "optimized": baseline_ppa["timing"]["logic_levels"], "delta_pct": 0.0 }
                 }
-            },
-            "ml_prediction": ml_prediction,
-            "transformations_applied": [],
-            "warnings": ["No safe optimizations found. Code is already efficient or rules didn't match."]
-        }
+            }
         print(json.dumps(result, indent=2))
         sys.exit(0)
 
@@ -119,7 +124,7 @@ def main():
 
     if equiv_status != "PASS":
         # If equivalence fails, reject the optimization
-        baseline_ppa = synth_runner.run_synthesis(str(input_path), top_module)
+        baseline_ppa = synth_runner.run_synthesis(str(input_path), top_module, target=args.target)
         result = {
             "detected_hdl": "verilog",
             "optimizable": False,
@@ -128,25 +133,45 @@ def main():
             "functional_equivalence": equiv_status,
             "impact": {
                 "area": {
-                    "cell_count": { "baseline": baseline_ppa.get("area", {}).get("cell_count", 0), "optimized": None, "delta_pct": 0.0 }
+                    "cell_count": { "baseline": baseline_ppa.get("area", {}).get("cell_count"), "optimized": None, "delta_pct": 0.0 }
                 },
                 "timing": {
-                    "logic_levels": { "baseline": baseline_ppa.get("timing", {}).get("logic_levels", 0), "optimized": None, "delta_pct": 0.0 }
+                    "logic_levels": { "baseline": baseline_ppa.get("timing", {}).get("logic_levels"), "optimized": None, "delta_pct": 0.0 }
                 }
             },
+            "ml_prediction": ml_prediction,
             "transformations_applied": transformations,
             "warnings": ["Optimizations were proposed but rejected because functional equivalence could not be proven (Status: " + equiv_status + ")."]
         }
+        if "error" in baseline_ppa:
+            result["synthesis_diagnostics"] = {"baseline": baseline_ppa["error"]}
+            result["warnings"].append("Baseline synthesis failed; the ML gate estimate and feature evidence remain available.")
         print(json.dumps(result, indent=2))
         sys.exit(0)
 
     # 3. Baseline & Optimized Synthesis
-    baseline_ppa = synth_runner.run_synthesis(str(input_path), top_module)
-    opt_ppa = synth_runner.run_synthesis(str(optimized_path), top_module)
+    baseline_ppa = synth_runner.run_synthesis(str(input_path), top_module, target=args.target)
+    opt_ppa = synth_runner.run_synthesis(str(optimized_path), top_module, target=args.target)
 
     if "error" in baseline_ppa or "error" in opt_ppa:
-        print(json.dumps({"error": "Synthesis failed during PPA extraction."}))
-        sys.exit(1)
+        diagnostics = {}
+        if "error" in baseline_ppa:
+            diagnostics["baseline"] = baseline_ppa["error"]
+        if "error" in opt_ppa:
+            diagnostics["optimized"] = opt_ppa["error"]
+        print(json.dumps({
+            "detected_hdl": "verilog",
+            "optimizable": True,
+            "optimized_code": optimized_code,
+            "diff": generate_diff(original_code, optimized_code, input_path.name),
+            "functional_equivalence": equiv_status,
+            "impact": None,
+            "ml_prediction": ml_prediction,
+            "transformations_applied": transformations,
+            "synthesis_diagnostics": diagnostics,
+            "warnings": ["Synthesis failed; the ML gate estimate and feature evidence remain available. Validate the proposed rewrite in a compatible synthesis environment."],
+        }, indent=2))
+        sys.exit(0)
 
     def calc_delta(b, o):
         if b == 0:

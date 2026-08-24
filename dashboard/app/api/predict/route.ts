@@ -108,11 +108,19 @@ async function findPythonInterpreter(rootDir: string): Promise<string> {
 
 export async function POST(req: Request) {
   try {
-    const { code } = await req.json();
+    const { code, target = "asic" } = await req.json();
 
     if (!code || typeof code !== "string" || !code.trim()) {
       return NextResponse.json({ success: false, error: "No Verilog code provided" }, { status: 400 });
     }
+
+    // Browser file uploads can retain a UTF-8 BOM, which Yosys interprets as
+    // an invalid first Verilog token. Strip the three-byte signature at the
+    // byte boundary so serialization cannot reintroduce it downstream.
+    const sourceBytes = Buffer.from(code, "utf-8");
+    const normalizedBytes = sourceBytes[0] === 0xef && sourceBytes[1] === 0xbb && sourceBytes[2] === 0xbf
+      ? sourceBytes.subarray(3)
+      : sourceBytes;
 
     const tempDir = path.join(process.cwd(), "temp");
     if (!fs.existsSync(tempDir)) {
@@ -120,7 +128,7 @@ export async function POST(req: Request) {
     }
 
     const tempFile = path.join(tempDir, `input_${Date.now()}.v`);
-    fs.writeFileSync(tempFile, code, "utf-8");
+    fs.writeFileSync(tempFile, normalizedBytes);
 
     const rootDir = path.join(process.cwd(), "..");
     const backendDir = path.join(rootDir, "rtl_gate_estimator");
@@ -137,7 +145,7 @@ export async function POST(req: Request) {
     let pythonCmd: string;
     try {
       const pythonInterpreter = await findPythonInterpreter(rootDir);
-      pythonCmd = `${pythonInterpreter} -m scripts.optimize_rtl --input "${tempFile}"`;
+      pythonCmd = `${pythonInterpreter} -m scripts.optimize_rtl --input "${tempFile}" --target ${target}`;
     } catch (interpreterErr: unknown) {
       if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
       return NextResponse.json({
@@ -178,6 +186,8 @@ export async function POST(req: Request) {
           impact: result.impact,
           transformations_applied: result.transformations_applied,
           warnings: result.warnings,
+          synthesisDiagnostics: result.synthesis_diagnostics,
+          syntax_error: result.syntax_error,
           raw: result,
         });
       }
