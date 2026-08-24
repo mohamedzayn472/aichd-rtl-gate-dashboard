@@ -56,7 +56,7 @@ function getExplanation(feature: string, importance?: number) {
   return { title: "Model evidence is led by a structural feature", summary: `The feature “${feature}” ${direction} the estimate most strongly in this run.`, action: "Use the returned attribution and extracted-feature sections below to identify which source constructs should be reviewed first." };
 }
 
-function getOptimizationAssessmentFromApi(apiResponse: PredictApiResponse | null, sourceCode: string): OptimizationAssessment {
+function getOptimizationAssessmentFromApi(apiResponse: PredictApiResponse | null): OptimizationAssessment {
   if (!apiResponse) {
     return {
       status: "optimized",
@@ -154,7 +154,7 @@ export default function PredictTool() {
   const totalOutputs = features.num_outputs ?? features.struct_num_outputs ?? 0;
   const totalWires = features.num_wires ?? features.struct_num_wires ?? 0;
   const explanation = getExplanation(topFeature, topImpact);
-  const optimization = getOptimizationAssessmentFromApi(apiResponse, code);
+  const optimization = getOptimizationAssessmentFromApi(apiResponse);
   const stageLabel = runStage === "capture" ? "Reading source" : runStage === "structure" ? "Extracting structure" : runStage === "evidence" ? "Calibrating evidence" : "Ready";
   const reportText = hasResult ? [
     "# AICHD RTL Gate Estimation Report", `Generated: ${new Date().toLocaleString()}`, `Source: ${uploadedFileName ?? "untitled_module.v"}`, "",

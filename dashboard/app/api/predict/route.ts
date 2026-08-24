@@ -164,7 +164,7 @@ export async function POST(req: Request) {
         
         // Ensure backwards compatibility with old structure for now
         // while also passing the new fields
-        const ml_prediction = result.ml_prediction as any || {};
+        const ml_prediction = (result.ml_prediction as Record<string, unknown>) || {};
         
         return NextResponse.json({
           success: true,
