@@ -13,3 +13,5 @@ The ripple-adder run completed successfully in the local workbench. Its live res
 The restored **Explanation** view correctly rendered a live-data interpretation: it identified expression density as the primary driver, presented an action-oriented next check, and displayed all **14** extracted feature values including the returned input, output, wire, line, character, and bit-width measures.
 
 The restored **Report** view rendered from the same live result. It exposes **Copy** and **Download .md** actions and previews the source name, the **19** NAND2-equivalent gate estimate, the `complex_chars` primary driver, its explanation, and the report interpretation boundary.
+
+Commit `76c30b3` was pushed to the Render-connected `main` branch. Render registered the release as an Auto-Deploy while the preceding selective-animation commit remained live.

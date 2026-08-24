@@ -1,0 +1,5 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/temp/test_identity_opt.v"
+hierarchy -check -top identity_test
+synth
+stat
+ltp

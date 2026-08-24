@@ -23,7 +23,23 @@ const DEMO_VERILOG = `module ripple_adder_4bit (
 endmodule`;
 
 type ShapItem = { feature?: string; importance?: number; raw_value?: number; [key: string]: unknown };
-type PredictApiResponse = { success?: boolean; error?: string; gateCount?: number; features?: Record<string, number>; shapValues?: ShapItem[] };
+type PredictApiResponse = {
+  success?: boolean;
+  error?: string;
+  gateCount?: number;
+  features?: Record<string, number>;
+  shapValues?: ShapItem[];
+  optimizable?: boolean;
+  optimized_code?: string;
+  diff?: string;
+  functional_equivalence?: string;
+  impact?: {
+    area?: { cell_count?: { baseline: number; optimized: number; delta_pct: number } };
+    timing?: { logic_levels?: { baseline: number; optimized: number; delta_pct: number } };
+  };
+  transformations_applied?: Array<{ rule: string; location: string; rationale: string }>;
+  warnings?: string[];
+};
 type HistoryEntry = { id: string; name: string; timestamp: string; gateCount: number; topFeature: string; code: string };
 type InstrumentTab = "observation" | "explanation" | "optimization" | "evidence" | "report" | "history";
 type OptimizationAssessment = { status: "optimized" | "rewrite-available"; title: string; summary: string; changes: string[]; optimizedCode?: string };
@@ -40,40 +56,42 @@ function getExplanation(feature: string, importance?: number) {
   return { title: "Model evidence is led by a structural feature", summary: `The feature “${feature}” ${direction} the estimate most strongly in this run.`, action: "Use the returned attribution and extracted-feature sections below to identify which source constructs should be reviewed first." };
 }
 
-function getOptimizationAssessment(source: string, feature: string): OptimizationAssessment {
-  const transforms = [
-    { label: "Replaced an idempotent AND expression (`x & x`) with `x`.", pattern: /\b([A-Za-z_]\w*(?:\s*\[[^\]]+\])?)\s*&\s*\1/g },
-    { label: "Replaced an idempotent OR expression (`x | x`) with `x`.", pattern: /\b([A-Za-z_]\w*(?:\s*\[[^\]]+\])?)\s*\|\s*\1/g },
-    { label: "Replaced an idempotent XOR expression (`x ^ x`) with `x`.", pattern: /\b([A-Za-z_]\w*(?:\s*\[[^\]]+\])?)\s*\^\s*\1/g },
-    { label: "Removed a double inversion (`~(~x)`).", pattern: /~\s*\(\s*~\s*([A-Za-z_]\w*(?:\s*\[[^\]]+\])?)\s*\)/g },
-  ];
-
-  let optimizedCode = source;
-  const changes: string[] = [];
-  for (const transform of transforms) {
-    let replacements = 0;
-    optimizedCode = optimizedCode.replace(transform.pattern, (_match, signal: string) => {
-      replacements += 1;
-      return signal;
-    });
-    if (replacements > 0) changes.push(`${transform.label} ${replacements} occurrence${replacements === 1 ? "" : "s"} changed.`);
+function getOptimizationAssessmentFromApi(apiResponse: PredictApiResponse | null, sourceCode: string): OptimizationAssessment {
+  if (!apiResponse) {
+    return {
+      status: "optimized",
+      title: "Awaiting analysis",
+      summary: "Run a live estimate to receive an evidence-aware source assessment.",
+      changes: [],
+    };
   }
 
-  if (changes.length > 0) {
+  if (apiResponse.optimizable && apiResponse.optimized_code) {
+    const changes = apiResponse.transformations_applied?.map((t) => `${t.rule}: ${t.rationale} (${t.location})`) || [];
+    if (apiResponse.functional_equivalence !== "PASS") {
+      changes.push(`⚠ WARNING: Equivalence check status: ${apiResponse.functional_equivalence}`);
+    }
+    
+    // Formatting PPA
+    if (apiResponse.impact?.area?.cell_count) {
+      const area = apiResponse.impact.area.cell_count;
+      changes.push(`Area impact: ${area.baseline} -> ${area.optimized} cells (${area.delta_pct > 0 ? '+' : ''}${area.delta_pct}%).`);
+    }
+
     return {
       status: "rewrite-available",
       title: "A safe source-level rewrite is available",
-      summary: `AICHD found ${changes.length} deterministic Boolean identity ${changes.length === 1 ? "pattern" : "patterns"} in the submitted RTL. The corrected source below is offered because the rewrite preserves the local expression; the live model’s primary signal is “${feature}”.`,
+      summary: `AICHD found deterministic optimization opportunities in the submitted RTL, confirmed via Yosys synthesis. Functional Equivalence: ${apiResponse.functional_equivalence}.`,
       changes,
-      optimizedCode,
+      optimizedCode: apiResponse.optimized_code,
     };
   }
 
   return {
     status: "optimized",
     title: "Optimized for automatic source checks",
-    summary: `No safe Boolean-identity rewrite was detected in this source. For the automatic checks AICHD can prove locally, the submitted RTL is optimized. The live model’s primary signal is “${feature}”; technology-specific synthesis may still produce different implementation choices.`,
-    changes: ["No deterministic, semantics-preserving rewrite was found in the submitted source."],
+    summary: `No safe Boolean-identity rewrite was detected by the backend. For the automatic checks AICHD can prove locally, the submitted RTL is optimized.`,
+    changes: apiResponse.warnings || ["No deterministic, semantics-preserving rewrite was found."],
   };
 }
 
@@ -88,6 +106,7 @@ export default function PredictTool() {
   const [gateCount, setGateCount] = useState(0);
   const [shapData, setShapData] = useState<ShapItem[]>([]);
   const [features, setFeatures] = useState<Record<string, number>>({});
+  const [apiResponse, setApiResponse] = useState<PredictApiResponse | null>(null);
   const [activeTab, setActiveTab] = useState<InstrumentTab>("observation");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [reportAction, setReportAction] = useState<"idle" | "copied" | "downloaded">("idle");
@@ -106,7 +125,7 @@ export default function PredictTool() {
 
   const loadFile = async (file: File) => {
     if (!isValidVerilogFile(file.name)) { setErrorMsg(`Unsupported source "${file.name}". Choose a .v or .sv file.`); return; }
-    try { setCode(await file.text()); setUploadedFileName(file.name); setErrorMsg(null); setHasResult(false); }
+    try { setCode(await file.text()); setUploadedFileName(file.name); setErrorMsg(null); setHasResult(false); setApiResponse(null); }
     catch { setErrorMsg(`The source file "${file.name}" could not be read.`); }
   };
 
@@ -121,21 +140,21 @@ export default function PredictTool() {
       if (!response.ok || data.success === false || data.error) throw new Error(data.error ?? "Inference could not complete.");
       const nextGateCount = data.gateCount ?? 0;
       const nextShap = data.shapValues ?? [];
-      setGateCount(nextGateCount); setShapData(nextShap); setFeatures(data.features ?? {}); setHasResult(true); setActiveTab("observation");
+      setGateCount(nextGateCount); setShapData(nextShap); setFeatures(data.features ?? {}); setHasResult(true); setActiveTab("observation"); setApiResponse(data);
       const entry: HistoryEntry = { id: `${Date.now()}`, name: uploadedFileName ?? "untitled_module.v", timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), gateCount: nextGateCount, topFeature: nextShap[0]?.feature ?? "structural evidence", code };
       setHistory((current) => [entry, ...current.filter((item) => item.code !== code)].slice(0, 6));
-    } catch (error) { setHasResult(false); setErrorMsg(error instanceof Error ? error.message : "The inference request could not be completed."); }
+    } catch (error) { setHasResult(false); setErrorMsg(error instanceof Error ? error.message : "The inference request could not be completed."); setApiResponse(null); }
     finally { window.clearTimeout(structureTimer); window.clearTimeout(evidenceTimer); setIsRunning(false); setRunStage("idle"); }
   };
 
-  const resetDraft = () => { setCode(DEMO_VERILOG); setUploadedFileName(null); setErrorMsg(null); setHasResult(false); setReportAction("idle"); setOptimizationAction("idle"); };
+  const resetDraft = () => { setCode(DEMO_VERILOG); setUploadedFileName(null); setErrorMsg(null); setHasResult(false); setApiResponse(null); setReportAction("idle"); setOptimizationAction("idle"); };
   const topFeature = shapData[0]?.feature ?? "Awaiting analysis";
   const topImpact = shapData[0]?.importance;
   const totalInputs = features.num_inputs ?? features.struct_num_inputs ?? 0;
   const totalOutputs = features.num_outputs ?? features.struct_num_outputs ?? 0;
   const totalWires = features.num_wires ?? features.struct_num_wires ?? 0;
   const explanation = getExplanation(topFeature, topImpact);
-  const optimization = getOptimizationAssessment(code, topFeature);
+  const optimization = getOptimizationAssessmentFromApi(apiResponse, code);
   const stageLabel = runStage === "capture" ? "Reading source" : runStage === "structure" ? "Extracting structure" : runStage === "evidence" ? "Calibrating evidence" : "Ready";
   const reportText = hasResult ? [
     "# AICHD RTL Gate Estimation Report", `Generated: ${new Date().toLocaleString()}`, `Source: ${uploadedFileName ?? "untitled_module.v"}`, "",

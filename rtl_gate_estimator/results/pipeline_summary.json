@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-20T15:27:10.412090+00:00",
+  "timestamp": "2026-08-24T16:01:56.536379+00:00",
   "config": "C:\\Users\\moham\\Desktop\\AICD Project\\rtl_gate_estimator\\config\\config.yaml",
   "phases": {
     "phase_1": {
@@ -16,16 +16,7 @@
     },
     "phase_4": {
       "model_path": "C:\\Users\\moham\\Desktop\\AICD Project\\rtl_gate_estimator\\models\\model.pkl",
-      "test_r2": 0.9439766531903324
-    },
-    "phase_5": {
-      "shap_path": "C:\\Users\\moham\\Desktop\\AICD Project\\rtl_gate_estimator\\results\\shap_values.json"
-    },
-    "phase_6": {
-      "ablation_path": "C:\\Users\\moham\\Desktop\\AICD Project\\rtl_gate_estimator\\results\\ablation_study_results.json"
-    },
-    "phase_7": {
-      "faithfulness_score": 0.9691575091575092
+      "test_r2": 0.8486858944752733
     }
   }
 }

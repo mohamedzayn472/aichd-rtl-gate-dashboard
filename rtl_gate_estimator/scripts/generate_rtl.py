@@ -154,14 +154,266 @@ class RTLGenerator:
         verilog += "\nendmodule\n"
         return verilog, module_gate_counts
 
+    def _generate_arithmetic_module(self, module_id: int) -> Tuple[str, Dict[str, int]]:
+        """Generate a module using arithmetic operators (+, -, *)."""
+        bitwidth = random.choice([4, 8, 16, 32])
+        num_inputs = random.randint(2, min(4, self.max_inputs))
+        num_outputs = random.randint(1, min(3, self.max_outputs))
+
+        module_name = f"rtl_module_{module_id}"
+        verilog = f"module {module_name} (\n"
+
+        in_ports = []
+        for i in range(num_inputs):
+            verilog_decl = f"input wire [{bitwidth - 1}:0] in_{i}"
+            in_ports.append(verilog_decl)
+
+        out_ports = []
+        for o in range(num_outputs):
+            out_bw = bitwidth if o == 0 else random.choice([bitwidth, bitwidth + 1, 2 * bitwidth])
+            verilog_decl = f"output wire [{out_bw - 1}:0] out_{o}"
+            out_ports.append(verilog_decl)
+
+        verilog += ',\n    '.join(in_ports + out_ports) + "\n);\n\n"
+
+        # Heuristic gate counts for arithmetic operators:
+        # N-bit adder ≈ 5N gates, N-bit multiplier ≈ N² gates, subtractor ≈ 5N gates
+        gate_count = 0
+        arith_ops = ['+', '-', '*']
+
+        verilog += "    // Arithmetic logic\n"
+        num_intermediates = random.randint(1, 4)
+        internal_signals = []
+        for s in range(num_intermediates):
+            verilog += f"    wire [{bitwidth - 1}:0] tmp_{s};\n"
+            internal_signals.append(f"tmp_{s}")
+        verilog += "\n"
+
+        all_sigs = [f"in_{i}" for i in range(num_inputs)] + internal_signals
+        targets = internal_signals + [f"out_{o}" for o in range(num_outputs)]
+
+        for target in targets:
+            op = random.choice(arith_ops)
+            operands = random.sample(all_sigs, min(2, len(all_sigs)))
+            if len(operands) < 2:
+                operands = [operands[0], operands[0]]
+            if op == '*':
+                gate_count += bitwidth * bitwidth
+                verilog += f"    assign {target} = {operands[0]} * {operands[1]};\n"
+            elif op == '+':
+                gate_count += 5 * bitwidth
+                # Sometimes add carry chain style
+                if random.random() < 0.3 and num_inputs >= 3:
+                    third = random.choice([s for s in all_sigs if s not in operands] or all_sigs[:1])
+                    gate_count += 5 * bitwidth
+                    verilog += f"    assign {target} = {operands[0]} + {operands[1]} + {third};\n"
+                else:
+                    verilog += f"    assign {target} = {operands[0]} + {operands[1]};\n"
+            else:  # '-'
+                gate_count += 5 * bitwidth
+                verilog += f"    assign {target} = {operands[0]} - {operands[1]};\n"
+
+        verilog += "\nendmodule\n"
+
+        # Map total gate count into the standard breakdown (approximate)
+        gate_counts = {
+            'and': gate_count // 3,
+            'or': gate_count // 4,
+            'xor': gate_count // 4,
+            'not': gate_count // 6,
+            'nand': gate_count // 12,
+            'nor': gate_count // 12,
+        }
+        return verilog, gate_counts
+
+    def _generate_behavioral_module(self, module_id: int) -> Tuple[str, Dict[str, int]]:
+        """Generate a module using always blocks with case/if-else."""
+        bitwidth = random.choice([4, 8, 16])
+        num_data_inputs = random.randint(2, min(4, self.max_inputs))
+        sel_width = random.randint(1, 3)
+        num_outputs = random.randint(1, min(2, self.max_outputs))
+        num_branches = min(2 ** sel_width, random.randint(2, 8))
+
+        module_name = f"rtl_module_{module_id}"
+        verilog = f"module {module_name} (\n"
+
+        in_ports = [f"input wire [{bitwidth - 1}:0] in_{i}" for i in range(num_data_inputs)]
+        in_ports.append(f"input wire [{sel_width - 1}:0] sel")
+        out_ports = [f"output reg [{bitwidth - 1}:0] out_{o}" for o in range(num_outputs)]
+        verilog += ',\n    '.join(in_ports + out_ports) + "\n);\n\n"
+
+        # Gate count heuristic: mux ≈ (num_branches × bitwidth × 4) for a case statement
+        gate_count = 0
+        arith_ops = ['+', '-', '&', '|', '^']
+
+        use_case = random.random() < 0.6
+
+        if use_case:
+            verilog += "    always @(*) begin\n"
+            verilog += f"        case(sel)\n"
+            for b in range(num_branches):
+                op = random.choice(arith_ops)
+                ins = random.sample([f"in_{i}" for i in range(num_data_inputs)], min(2, num_data_inputs))
+                if len(ins) < 2:
+                    ins = [ins[0], ins[0]]
+
+                branch_label = f"{sel_width}'d{b}"
+                for o in range(num_outputs):
+                    if op in ['+', '-']:
+                        gate_count += 5 * bitwidth
+                    else:
+                        gate_count += bitwidth
+                    verilog += f"            {branch_label}: out_{o} = {ins[0]} {op} {ins[1]};\n"
+                    branch_label = f"       "  # subsequent outputs don't need a new label
+
+            verilog += f"            default: "
+            for o in range(num_outputs):
+                verilog += f"out_{o} = {bitwidth}'b0; "
+            gate_count += bitwidth * num_outputs
+            verilog += "\n        endcase\n"
+            verilog += "    end\n"
+            # Mux overhead
+            gate_count += num_branches * bitwidth * 4
+        else:
+            # if-else chain
+            verilog += "    always @(*) begin\n"
+            for b in range(num_branches):
+                cond = f"sel == {sel_width}'d{b}"
+                op = random.choice(arith_ops)
+                ins = random.sample([f"in_{i}" for i in range(num_data_inputs)], min(2, num_data_inputs))
+                if len(ins) < 2:
+                    ins = [ins[0], ins[0]]
+
+                prefix = "if" if b == 0 else "else if"
+                verilog += f"        {prefix} ({cond}) begin\n"
+                for o in range(num_outputs):
+                    if op in ['+', '-']:
+                        gate_count += 5 * bitwidth
+                    else:
+                        gate_count += bitwidth
+                    verilog += f"            out_{o} = {ins[0]} {op} {ins[1]};\n"
+                verilog += "        end\n"
+
+            verilog += "        else begin\n"
+            for o in range(num_outputs):
+                verilog += f"            out_{o} = {bitwidth}'b0;\n"
+            gate_count += bitwidth * num_outputs
+            verilog += "        end\n"
+            verilog += "    end\n"
+            gate_count += num_branches * bitwidth * 3  # mux/priority overhead
+
+        verilog += "\nendmodule\n"
+
+        gate_counts = {
+            'and': gate_count // 3,
+            'or': gate_count // 4,
+            'xor': gate_count // 5,
+            'not': gate_count // 6,
+            'nand': gate_count // 12,
+            'nor': gate_count // 12,
+        }
+        return verilog, gate_counts
+
+    def _generate_mixed_module(self, module_id: int) -> Tuple[str, Dict[str, int]]:
+        """Generate a module mixing assign + always blocks."""
+        bitwidth = random.choice([4, 8])
+        num_inputs = random.randint(2, min(4, self.max_inputs))
+        num_outputs = random.randint(2, min(4, self.max_outputs))
+
+        module_name = f"rtl_module_{module_id}"
+        verilog = f"module {module_name} (\n"
+
+        in_ports = [f"input wire [{bitwidth - 1}:0] in_{i}" for i in range(num_inputs)]
+        # Some outputs are wire (from assign), some are reg (from always)
+        assign_outs = num_outputs // 2
+        always_outs = num_outputs - assign_outs
+        out_ports = []
+        for o in range(assign_outs):
+            out_ports.append(f"output wire [{bitwidth - 1}:0] out_{o}")
+        for o in range(assign_outs, num_outputs):
+            out_ports.append(f"output reg [{bitwidth - 1}:0] out_{o}")
+
+        verilog += ',\n    '.join(in_ports + out_ports) + "\n);\n\n"
+
+        gate_count = 0
+        verilog += "    // Combinational assigns\n"
+        num_wires = random.randint(1, 4)
+        for w in range(num_wires):
+            verilog += f"    wire [{bitwidth - 1}:0] w_{w};\n"
+
+        all_sigs = [f"in_{i}" for i in range(num_inputs)] + [f"w_{w}" for w in range(num_wires)]
+
+        for w in range(num_wires):
+            op = random.choice(['+', '&', '|', '^'])
+            ins = random.sample(all_sigs[:num_inputs], min(2, num_inputs))
+            if len(ins) < 2:
+                ins = [ins[0], ins[0]]
+            if op == '+':
+                gate_count += 5 * bitwidth
+            else:
+                gate_count += bitwidth
+            verilog += f"    assign w_{w} = {ins[0]} {op} {ins[1]};\n"
+
+        for o in range(assign_outs):
+            op = random.choice(['+', '-', '&', '|', '^'])
+            ins = random.sample(all_sigs, min(2, len(all_sigs)))
+            if len(ins) < 2:
+                ins = [ins[0], ins[0]]
+            if op in ['+', '-']:
+                gate_count += 5 * bitwidth
+            else:
+                gate_count += bitwidth
+            verilog += f"    assign out_{o} = {ins[0]} {op} {ins[1]};\n"
+
+        verilog += "\n    // Behavioral always block\n"
+        verilog += "    always @(*) begin\n"
+        for o in range(assign_outs, num_outputs):
+            op = random.choice(['+', '-', '&', '|'])
+            ins = random.sample(all_sigs, min(2, len(all_sigs)))
+            if len(ins) < 2:
+                ins = [ins[0], ins[0]]
+            if op in ['+', '-']:
+                gate_count += 5 * bitwidth
+            else:
+                gate_count += bitwidth
+            verilog += f"        out_{o} = {ins[0]} {op} {ins[1]};\n"
+        verilog += "    end\n"
+
+        verilog += "\nendmodule\n"
+
+        gate_counts = {
+            'and': gate_count // 3,
+            'or': gate_count // 4,
+            'xor': gate_count // 5,
+            'not': gate_count // 6,
+            'nand': gate_count // 12,
+            'nor': gate_count // 12,
+        }
+        return verilog, gate_counts
+
     def generate_module(self, module_id: int) -> str:
         """Return only the generated Verilog text for backward compatibility."""
-        verilog_code, _ = self._generate_module_impl(module_id)
+        verilog_code, _ = self.generate_module_with_counts(module_id)
         return verilog_code
 
     def generate_module_with_counts(self, module_id: int) -> Tuple[str, Dict[str, int]]:
-        """Return both RTL text and the exact gate counts for pipeline use."""
-        return self._generate_module_impl(module_id)
+        """Return both RTL text and the exact gate counts for pipeline use.
+
+        Randomly selects from four styles to create diverse training data:
+        - 50% explicit gate-level (original)
+        - 20% arithmetic (+, -, *)
+        - 20% behavioral (always, case, if/else)
+        - 10% mixed (assign + always)
+        """
+        style = random.random()
+        if style < 0.50:
+            return self._generate_module_impl(module_id)
+        elif style < 0.70:
+            return self._generate_arithmetic_module(module_id)
+        elif style < 0.90:
+            return self._generate_behavioral_module(module_id)
+        else:
+            return self._generate_mixed_module(module_id)
 
 
 def main():

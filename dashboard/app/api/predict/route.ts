@@ -124,22 +124,20 @@ export async function POST(req: Request) {
 
     const rootDir = path.join(process.cwd(), "..");
     const backendDir = path.join(rootDir, "rtl_gate_estimator");
-    const predictScript = path.join(backendDir, "scripts", "predict.py");
-    const configPath = path.join(backendDir, "config", "config.yaml");
-    const modelPath = path.join(backendDir, "models", "model.pkl");
+    const predictScript = path.join(backendDir, "scripts", "optimize_rtl.py");
 
     if (!fs.existsSync(predictScript)) {
       if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
       return NextResponse.json({
         success: false,
-        error: `predict.py not found at ${predictScript}. Ensure the rtl_gate_estimator directory is present.`,
+        error: `optimize_rtl.py not found at ${predictScript}. Ensure the rtl_gate_estimator directory is present.`,
       });
     }
 
     let pythonCmd: string;
     try {
       const pythonInterpreter = await findPythonInterpreter(rootDir);
-      pythonCmd = `${pythonInterpreter} "${predictScript}" --input "${tempFile}" --config "${configPath}" --model "${modelPath}" --json`;
+      pythonCmd = `${pythonInterpreter} -m scripts.optimize_rtl --input "${tempFile}"`;
     } catch (interpreterErr: unknown) {
       if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
       return NextResponse.json({
@@ -157,19 +155,29 @@ export async function POST(req: Request) {
       // Cleanup temp file
       if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
 
-      // predict.py emits indented multi-line JSON. Parse the complete output
-      // first, then fall back to the JSON object boundaries if a wrapper adds
-      // harmless stdout noise.
+      // optimize_rtl.py emits JSON. Parse the complete output
       const result = parsePredictOutput(stdout);
       if (result) {
         if (result.error) {
           return NextResponse.json({ success: false, error: result.error }, { status: 400 });
         }
+        
+        // Ensure backwards compatibility with old structure for now
+        // while also passing the new fields
+        const ml_prediction = result.ml_prediction as any || {};
+        
         return NextResponse.json({
           success: true,
-          gateCount: Math.max(0, Math.round(result.predicted_gate_count || 0)),
-          features: result.features || {},
-          shapValues: result.shap_values || [],
+          gateCount: Math.max(0, Math.round((ml_prediction.gate_count as number) || 0)),
+          features: ml_prediction.features || {},
+          shapValues: ml_prediction.shap_values || [],
+          optimizable: result.optimizable,
+          optimized_code: result.optimized_code,
+          diff: result.diff,
+          functional_equivalence: result.functional_equivalence,
+          impact: result.impact,
+          transformations_applied: result.transformations_applied,
+          warnings: result.warnings,
           raw: result,
         });
       }

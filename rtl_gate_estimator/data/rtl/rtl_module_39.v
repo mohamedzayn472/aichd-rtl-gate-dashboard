@@ -1,23 +1,21 @@
 module rtl_module_39 (
-input wire [2:0] in_0,
-    input wire [4:0] in_1,
-    input wire [1:0] in_2,
-    output wire [6:0] out_0
+input wire [15:0] in_0,
+    input wire [15:0] in_1,
+    input wire [2:0] sel,
+    output reg [15:0] out_0,
+    output reg [15:0] out_1
 );
 
-    // Internal signals
-    wire [2:0] sig_0;
-    wire [1:0] sig_1;
-    wire [0:0] sig_2;
-    wire [4:0] sig_3;
-    wire [2:0] sig_4;
-    wire [7:0] sig_5;
-    wire [5:0] sig_6;
-
-    // Logic assignments
-    assign out_0 = (~((sig_3 | (~(~(((~((~(out_0 & out_0)) | in_1)) & sig_1) | sig_6)))) & sig_0));
-    assign sig_3 = (sig_0 & ((~in_0) & in_0));
-    assign sig_1 = (sig_2 & (~(in_1 | (in_2 | in_0))));
-    assign sig_3 = ((~((~(~((sig_0 | in_1) & in_2))) & out_0)) | sig_3);
+    always @(*) begin
+        case(sel)
+            3'd0: out_0 = in_1 | in_0;
+                   : out_1 = in_1 | in_0;
+            3'd1: out_0 = in_0 | in_1;
+                   : out_1 = in_0 | in_1;
+            3'd2: out_0 = in_1 - in_0;
+                   : out_1 = in_1 - in_0;
+            default: out_0 = 16'b0; out_1 = 16'b0; 
+        endcase
+    end
 
 endmodule

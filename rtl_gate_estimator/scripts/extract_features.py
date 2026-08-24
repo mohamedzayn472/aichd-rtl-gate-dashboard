@@ -205,6 +205,100 @@ class RTLFeatureExtractor:
                 return idx, ch
         return -1, ''
 
+    @staticmethod
+    def _count_extended_operators(content: str) -> Dict[str, int]:
+        """Count arithmetic, comparison, shift, mux, and concat operators.
+
+        Scans the full module text (assign, always, initial blocks) for
+        operators that the original _count_gates misses. These contribute
+        significant gate-equivalent area in synthesis.
+        """
+        counts: Dict[str, int] = {
+            'add_ops': 0,
+            'sub_ops': 0,
+            'mul_ops': 0,
+            'compare_ops': 0,
+            'shift_ops': 0,
+            'mux_ops': 0,
+            'concat_ops': 0,
+        }
+
+        # Arithmetic: +, -, * (excluding port directions like "input wire")
+        # We match operator tokens not part of edge specs (posedge/negedge)
+        # or comment artifacts.  Use negative lookbehind/ahead for safety.
+        counts['add_ops'] = len(re.findall(
+            r'(?<![a-zA-Z_0-9])\+(?![a-zA-Z_0-9])', content
+        ))
+        # Subtract: minus sign used as binary operator (not unary negation
+        # in numeric literals like -1). Heuristic: preceded by ), ], or
+        # identifier char.
+        counts['sub_ops'] = len(re.findall(
+            r'(?<=[)\]a-zA-Z_0-9])\s*-\s*(?=[a-zA-Z_(0-9])', content
+        ))
+        counts['mul_ops'] = len(re.findall(
+            r'(?<!\*)\*(?!\*)', content  # exclude ** (power)
+        ))
+
+        # Comparison: ==, !=, <=, >=, <, >
+        # Exclude <= used as non-blocking assignment (after always block target)
+        counts['compare_ops'] = (
+            len(re.findall(r'[!=]=', content))
+            + len(re.findall(r'(?<!<)<=(?!=)', content))  # <= not <<= or <==
+            + len(re.findall(r'(?<!>)>=(?!=)', content))
+            + len(re.findall(r'(?<!<)<(?![=<])', content))
+            + len(re.findall(r'(?<!>)>(?![=>])', content))
+        )
+
+        # Shift: <<, >>
+        counts['shift_ops'] = len(re.findall(r'<<|>>', content))
+
+        # Ternary / mux: ? :
+        counts['mux_ops'] = len(re.findall(r'\?', content))
+
+        # Concatenation: {} pairs at depth 0 relative to each other
+        counts['concat_ops'] = len(re.findall(r'\{', content))
+
+        return counts
+
+    @staticmethod
+    def _count_always_blocks(content: str) -> int:
+        """Count always, always_comb, always_ff, always_latch, and initial blocks."""
+        return len(re.findall(
+            r'\b(?:always|always_comb|always_ff|always_latch|initial)\b', content
+        ))
+
+    @staticmethod
+    def _count_procedural_assignments(content: str) -> int:
+        """Count blocking (=) and non-blocking (<=) assignments inside always blocks."""
+        count = 0
+        # Find always/initial blocks and count assignments inside
+        block_pattern = re.compile(
+            r'\b(?:always|always_comb|always_ff|always_latch|initial)\b'
+            r'[^;]*?\bbegin\b(.*?)\bend\b',
+            flags=re.DOTALL,
+        )
+        for match in block_pattern.finditer(content):
+            body = match.group(1)
+            # Non-blocking <=
+            count += len(re.findall(r'<=', body))
+            # Blocking = (but not ==, !=, <=, >=)
+            count += len(re.findall(r'(?<![!<>=])=(?!=)', body))
+        return count
+
+    @staticmethod
+    def _count_case_branches(content: str) -> int:
+        """Count case/casex/casez branches (each maps to mux logic)."""
+        branch_count = 0
+        # Find case blocks
+        for match in re.finditer(
+            r'\b(?:case|casex|casez)\b.*?\bendcase\b',
+            content, flags=re.DOTALL,
+        ):
+            body = match.group(0)
+            # Each colon after a label is a branch
+            branch_count += len(re.findall(r':', body))
+        return branch_count
+
     def parse_verilog(self, verilog_content: str) -> Dict[str, int | float]:
         """Parse Verilog content and extract basic structural information."""
         content = self._strip_comments(verilog_content)
@@ -218,6 +312,10 @@ class RTLFeatureExtractor:
         avg_bitwidth = sum(widths) / len(widths) if widths else 0
         max_bitwidth = max(widths, default=0)
         gate_counts = self._count_gates(content)
+        ext_ops = self._count_extended_operators(content)
+        num_always = self._count_always_blocks(content)
+        num_proc_assigns = self._count_procedural_assignments(content)
+        num_case_branches = self._count_case_branches(content)
 
         return {
             'num_inputs': inputs,
@@ -229,7 +327,11 @@ class RTLFeatureExtractor:
             'num_assignments': len(re.findall(r'\bassign\s+', content)),
             'num_lines': len(content.split('\n')),
             'num_chars': len(content),
+            'num_always_blocks': num_always,
+            'num_proc_assigns': num_proc_assigns,
+            'num_case_branches': num_case_branches,
             **gate_counts,
+            **ext_ops,
         }
 
     def extract_features_from_content(
@@ -262,6 +364,16 @@ class RTLFeatureExtractor:
                 'complex_not_gates': basic_info['not'],
                 'complex_nand_gates': basic_info['nand'],
                 'complex_nor_gates': basic_info['nor'],
+                'complex_add_ops': basic_info['add_ops'],
+                'complex_sub_ops': basic_info['sub_ops'],
+                'complex_mul_ops': basic_info['mul_ops'],
+                'complex_compare_ops': basic_info['compare_ops'],
+                'complex_shift_ops': basic_info['shift_ops'],
+                'complex_mux_ops': basic_info['mux_ops'],
+                'complex_concat_ops': basic_info['concat_ops'],
+                'complex_always_blocks': basic_info['num_always_blocks'],
+                'complex_proc_assigns': basic_info['num_proc_assigns'],
+                'complex_case_branches': basic_info['num_case_branches'],
                 'complex_lines': basic_info['num_lines'],
                 'complex_chars': basic_info['num_chars'],
             })

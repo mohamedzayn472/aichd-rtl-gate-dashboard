@@ -162,8 +162,8 @@ class CommandExecutor:
         
         try:
             env = os.environ.copy()
-            oss_bin = Path(r"C:\Users\moham\oss-cad-suite\bin")
-            oss_lib = Path(r"C:\Users\moham\oss-cad-suite\lib")
+            oss_bin = Path.home() / "oss-cad-suite" / "bin"
+            oss_lib = Path.home() / "oss-cad-suite" / "lib"
             if oss_bin.exists():
                 env["PATH"] = f"{oss_bin};{oss_lib};" + env.get("PATH", "")
 
@@ -308,4 +308,3 @@ def validate_paths(config: Dict[str, Any]) -> bool:
     return True
 
 
-logger.info("[OK] Utils module initialized")

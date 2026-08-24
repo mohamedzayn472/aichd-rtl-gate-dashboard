@@ -1,0 +1,14 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/dashboard/temp/input_1787589109249.v"
+hierarchy -check -top input_1787589109249
+prep -flatten
+splitnets -ports; design -stash gold
+read_verilog "C:/Users/moham/Desktop/AICD Project/dashboard/temp/input_1787589109249_opt.v"
+hierarchy -check -top input_1787589109249
+prep -flatten
+splitnets -ports; design -stash gate
+design -copy-from gold -as gold input_1787589109249
+design -copy-from gate -as gate input_1787589109249
+equiv_make gold gate equiv
+hierarchy -top equiv
+equiv_simple -seq 5
+equiv_status -assert

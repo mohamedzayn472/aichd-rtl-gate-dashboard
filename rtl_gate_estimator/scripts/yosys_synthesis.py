@@ -36,7 +36,7 @@ class YosysSynthesizer:
         yosys_path = shutil.which("yosys")
         if yosys_path:
             return yosys_path
-        win_yosys = Path(r"C:\Users\moham\oss-cad-suite\bin\yosys.exe")
+        win_yosys = Path.home() / "oss-cad-suite" / "bin" / "yosys.exe"
         if win_yosys.exists():
             return str(win_yosys)
         raise RuntimeError("Real Yosys binary not found. Please install Yosys or add oss-cad-suite/bin to system PATH.")

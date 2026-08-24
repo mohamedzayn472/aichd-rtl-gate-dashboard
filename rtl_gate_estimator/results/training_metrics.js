@@ -1,8 +1,8 @@
 window.TRAINING_METRICS = {
-  "timestamp": "2026-08-20T15:27:08.109208+00:00",
+  "timestamp": "2026-08-24T16:01:56.520750+00:00",
   "model_type": "RandomForest",
   "target": "gate_count",
-  "num_features": 14,
+  "num_features": 24,
   "feature_columns": [
     "struct_num_inputs",
     "struct_num_outputs",
@@ -14,6 +14,16 @@ window.TRAINING_METRICS = {
     "complex_not_gates",
     "complex_nand_gates",
     "complex_nor_gates",
+    "complex_add_ops",
+    "complex_sub_ops",
+    "complex_mul_ops",
+    "complex_compare_ops",
+    "complex_shift_ops",
+    "complex_mux_ops",
+    "complex_concat_ops",
+    "complex_always_blocks",
+    "complex_proc_assigns",
+    "complex_case_branches",
     "complex_lines",
     "complex_chars",
     "bitwidth_avg",
@@ -26,76 +36,116 @@ window.TRAINING_METRICS = {
   },
   "metrics": {
     "train": {
-      "mse": 6.516434499372432,
-      "mae": 1.684689426465225,
-      "r2": 0.9933605782615275
+      "mse": 11901.296261998055,
+      "mae": 29.375874889554886,
+      "r2": 0.9821555099915721
     },
     "val": {
-      "mse": 19.81904054498675,
-      "mae": 3.1430638457511972,
-      "r2": 0.9738827634959819
+      "mse": 7932.1554649068785,
+      "mae": 36.26538648610647,
+      "r2": 0.9878627545002099
     },
     "test": {
-      "mse": 99.498001758099,
-      "mae": 5.421290936100936,
-      "r2": 0.9439766531903324
+      "mse": 12819.310844840775,
+      "mae": 36.6348975863026,
+      "r2": 0.8486858944752733
     }
   },
   "feature_importance": [
     {
-      "feature": "complex_chars",
-      "importance": 0.5332057963429973
-    },
-    {
-      "feature": "complex_nand_gates",
-      "importance": 0.16826142018873164
-    },
-    {
-      "feature": "complex_nor_gates",
-      "importance": 0.15360016702645737
-    },
-    {
-      "feature": "complex_xor_gates",
-      "importance": 0.044559992142452744
-    },
-    {
-      "feature": "complex_not_gates",
-      "importance": 0.03263146803732712
-    },
-    {
-      "feature": "complex_and_gates",
-      "importance": 0.02578033530873345
-    },
-    {
-      "feature": "complex_or_gates",
-      "importance": 0.019924809476523777
-    },
-    {
-      "feature": "struct_num_wires",
-      "importance": 0.013645900275699879
-    },
-    {
       "feature": "bitwidth_avg",
-      "importance": 0.00405310683981252
+      "importance": 0.8125792139422948
     },
     {
-      "feature": "struct_num_outputs",
-      "importance": 0.0015612021806208445
+      "feature": "complex_mul_ops",
+      "importance": 0.14742240143676916
     },
     {
-      "feature": "complex_lines",
-      "importance": 0.0015035387277144525
-    },
-    {
-      "feature": "struct_num_inputs",
-      "importance": 0.0012398341654071485
+      "feature": "complex_chars",
+      "importance": 0.013317344694967335
     },
     {
       "feature": "bitwidth_max",
-      "importance": 3.2429287521633933e-05
+      "importance": 0.00936317446560863
+    },
+    {
+      "feature": "complex_lines",
+      "importance": 0.003971840582676075
+    },
+    {
+      "feature": "struct_num_wires",
+      "importance": 0.0037897174547542765
+    },
+    {
+      "feature": "complex_sub_ops",
+      "importance": 0.0027860854688189058
+    },
+    {
+      "feature": "struct_num_outputs",
+      "importance": 0.002381449282579459
+    },
+    {
+      "feature": "complex_add_ops",
+      "importance": 0.0015145190992488452
+    },
+    {
+      "feature": "struct_num_inputs",
+      "importance": 0.0006891118088397022
+    },
+    {
+      "feature": "complex_proc_assigns",
+      "importance": 0.0006529253787649948
+    },
+    {
+      "feature": "complex_case_branches",
+      "importance": 0.0005694395446413428
+    },
+    {
+      "feature": "complex_xor_gates",
+      "importance": 0.00030371853393990826
+    },
+    {
+      "feature": "complex_or_gates",
+      "importance": 0.00017091463235744276
+    },
+    {
+      "feature": "complex_nor_gates",
+      "importance": 0.0001472450027855501
+    },
+    {
+      "feature": "complex_compare_ops",
+      "importance": 9.675382849826226e-05
+    },
+    {
+      "feature": "complex_nand_gates",
+      "importance": 8.904243829200374e-05
+    },
+    {
+      "feature": "complex_and_gates",
+      "importance": 8.854165532708714e-05
+    },
+    {
+      "feature": "complex_not_gates",
+      "importance": 3.598669863062239e-05
+    },
+    {
+      "feature": "complex_always_blocks",
+      "importance": 3.057405020553103e-05
     },
     {
       "feature": "struct_num_instances",
+      "importance": 0.0
+    },
+    {
+      "feature": "complex_shift_ops",
+      "importance": 0.0
+    },
+    {
+      "feature": "complex_mux_ops",
+      "importance": 0.0
+    },
+    {
+      "feature": "complex_concat_ops",
       "importance": 0.0
     }
   ],

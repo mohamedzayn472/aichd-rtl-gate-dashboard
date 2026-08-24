@@ -1,0 +1,5 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/dashboard/temp/input_1787589109249.v"
+hierarchy -check -top input_1787589109249
+synth
+stat
+ltp

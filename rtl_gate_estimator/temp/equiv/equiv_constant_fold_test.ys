@@ -1,0 +1,14 @@
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/temp/test_constant_fold.v"
+hierarchy -check -top constant_fold_test
+prep -flatten
+splitnets -ports; design -stash gold
+read_verilog "C:/Users/moham/Desktop/AICD Project/rtl_gate_estimator/temp/test_constant_fold_opt.v"
+hierarchy -check -top constant_fold_test
+prep -flatten
+splitnets -ports; design -stash gate
+design -copy-from gold -as gold constant_fold_test
+design -copy-from gate -as gate constant_fold_test
+equiv_make gold gate equiv
+hierarchy -top equiv
+equiv_simple -seq 5
+equiv_status -assert

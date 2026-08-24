@@ -1,0 +1,52 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{fang2023masterrtl,fang2025transfer,francisco2021ppa,levy2024fastpase}
+\citation{fang2023masterrtl,fang2025transfer,chattopadhyay2025ppa}
+\citation{fang2023masterrtl}
+\citation{fang2025transfer}
+\citation{levy2024fastpase}
+\citation{francisco2021ppa}
+\citation{chattopadhyay2025ppa}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{1}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Presynthesis PPA estimation}{1}{subsection.2.1}\protected@file@percent }
+\citation{lundberg2017shap}
+\citation{altmann2010permutation}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces AICD's auditable workflow. The same extracted feature representation is evaluated under multiple label regimes, repeated splits, held-out explanation checks, and a zero-shot real-RTL stress test.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:workflow}{{1}{2}{AICD's auditable workflow. The same extracted feature representation is evaluated under multiple label regimes, repeated splits, held-out explanation checks, and a zero-shot real-RTL stress test}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Feature attribution and faithfulness}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Auditable Methodology}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Feature representation}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Label provenance}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Predictive models and repeated evaluation}{2}{subsection.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Generator and Yosys gate-count labels for the 500 common synthetic modules. The high rank correlation does not imply identical absolute targets.}}{3}{figure.2}\protected@file@percent }
+\newlabel{fig:label-provenance}{{2}{3}{Generator and Yosys gate-count labels for the 500 common synthetic modules. The high rank correlation does not imply identical absolute targets}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Explanation-faithfulness protocol}{3}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Real-RTL stress test}{3}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Experimental Results}{3}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Repeated-seed accuracy}{3}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Repeated-seed test performance over 10 random 85/15 splits. Values are mean $\pm $ standard deviation.}}{3}{table.1}\protected@file@percent }
+\newlabel{tab:accuracy}{{I}{3}{Repeated-seed test performance over 10 random 85/15 splits. Values are mean $\pm $ standard deviation}{table.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Repeated-seed test performance. Error bars denote standard deviation across ten held-out splits. Yosys-derived targets are more difficult than generator-derived targets for the same source-level representation.}}{3}{figure.3}\protected@file@percent }
+\newlabel{fig:repeated-seed}{{3}{3}{Repeated-seed test performance. Error bars denote standard deviation across ten held-out splits. Yosys-derived targets are more difficult than generator-derived targets for the same source-level representation}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Explanation faithfulness}{3}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Zero-shot real-RTL behavior}{3}{subsection.4.3}\protected@file@percent }
+\bibstyle{IEEEtran}
+\bibdata{refs_revised}
+\bibcite{fang2023masterrtl}{1}
+\bibcite{fang2025transfer}{2}
+\bibcite{francisco2021ppa}{3}
+\bibcite{levy2024fastpase}{4}
+\bibcite{chattopadhyay2025ppa}{5}
+\bibcite{lundberg2017shap}{6}
+\bibcite{altmann2010permutation}{7}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Feature-importance ranks for SHAP, permutation importance, and mean-replacement ablation on the synchronized held-out set. Lower rank numbers indicate higher importance.}}{4}{figure.4}\protected@file@percent }
+\newlabel{fig:xai-ranks}{{4}{4}{Feature-importance ranks for SHAP, permutation importance, and mean-replacement ablation on the synchronized held-out set. Lower rank numbers indicate higher importance}{figure.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Zero-shot transfer to 17 real RTL modules. Log axes expose the large count range and the concentration of predictions near the synthetic training distribution.}}{4}{figure.5}\protected@file@percent }
+\newlabel{fig:real-rtl-shift}{{5}{4}{Zero-shot transfer to 17 real RTL modules. Log axes expose the large count range and the concentration of predictions near the synthetic training distribution}{figure.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Discussion}{4}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusion}{4}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{4}{section*.1}\protected@file@percent }
+\gdef \@abspage@last{5}

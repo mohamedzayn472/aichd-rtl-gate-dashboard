@@ -1,29 +1,24 @@
 module rtl_module_136 (
-input wire [2:0] in_0,
-    input wire [3:0] in_1,
+input wire [7:0] in_0,
+    input wire [7:0] in_1,
     input wire [7:0] in_2,
-    input wire [6:0] in_3,
-    input wire [6:0] in_4,
-    input wire [6:0] in_5,
-    output wire [6:0] out_0,
-    output wire [2:0] out_1,
-    output wire [2:0] out_2
+    input wire [1:0] sel,
+    output reg [7:0] out_0,
+    output reg [7:0] out_1
 );
 
-    // Internal signals
-    wire [5:0] sig_0;
-    wire [3:0] sig_1;
-    wire [3:0] sig_2;
-
-    // Logic assignments
-    assign out_0 = (((out_1 & (~((~(out_0 & (out_0 | out_1))) | in_4))) & in_2) ^ sig_0);
-    assign out_1 = (~(sig_2 & (~(in_4 | (in_4 | sig_0)))));
-    assign out_2 = (out_2 ^ (in_1 | (~in_5)));
-    assign out_0 = ((~(in_2 | (sig_0 & (~(out_2 & (~(in_4 ^ in_2))))))) ^ in_5);
-    assign sig_2 = (sig_2 ^ (sig_2 & (~(in_2 & in_5))));
-    assign sig_2 = ((~(~(in_1 | (((~(out_0 & sig_0)) | sig_0) & in_3)))) ^ sig_1);
-    assign sig_0 = (~((~(out_0 & (~(in_3 & in_0)))) & in_5));
-    assign out_1 = (~((out_0 ^ ((~(sig_0 | (~(out_0 | out_1)))) ^ sig_0)) | out_0));
-    assign sig_0 = (~(((~(~(in_1 | (~(sig_0 | in_0))))) & out_0) | in_1));
+    always @(*) begin
+        case(sel)
+            2'd0: out_0 = in_1 & in_0;
+                   : out_1 = in_1 & in_0;
+            2'd1: out_0 = in_0 - in_1;
+                   : out_1 = in_0 - in_1;
+            2'd2: out_0 = in_0 & in_2;
+                   : out_1 = in_0 & in_2;
+            2'd3: out_0 = in_1 | in_2;
+                   : out_1 = in_1 | in_2;
+            default: out_0 = 8'b0; out_1 = 8'b0; 
+        endcase
+    end
 
 endmodule
