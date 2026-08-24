@@ -63,7 +63,7 @@ def test_optimizer_preserves_ml_prediction_when_synthesis_fails(tmp_path, monkey
         def __init__(self):
             pass
 
-        def optimize(self, code, top_module, target):
+        def optimize(self, code):
             return code, []
 
     class FailingSynthesis:

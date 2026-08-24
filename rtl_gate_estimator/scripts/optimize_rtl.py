@@ -84,8 +84,16 @@ def main():
     synth_runner = get_synthesis_runner()
     equiv_checker = EquivalenceChecker()
 
-    # 1. Optimization Generation (Rules Engine)
-    optimized_code, transformations = rules_engine.optimize(original_code, top_module, target=args.target)
+    # 1. Optimization Generation (Rules Engine). Older deployments expose only
+    # ``optimize(code)``; inspect the callable before using newer context args.
+    import inspect
+    optimize_parameters = inspect.signature(rules_engine.optimize).parameters
+    if "target" in optimize_parameters:
+        optimized_code, transformations = rules_engine.optimize(original_code, top_module, target=args.target)
+    elif "top_module" in optimize_parameters:
+        optimized_code, transformations = rules_engine.optimize(original_code, top_module)
+    else:
+        optimized_code, transformations = rules_engine.optimize(original_code)
     
     optimizable = len(transformations) > 0
 
