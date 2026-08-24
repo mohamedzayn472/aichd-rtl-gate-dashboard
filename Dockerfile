@@ -6,7 +6,8 @@ ENV NODE_ENV=production \
     PATH="/opt/venv/bin:${PATH}"
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 python3-venv build-essential \
+    && apt-get install -y --no-install-recommends python3 python3-venv build-essential yosys \
+    && yosys -V \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
