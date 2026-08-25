@@ -107,6 +107,65 @@ class YosysRunner(SynthesisRunner):
             "raw_log": output
         }
 
+    def build_optimized_candidate(self, verilog_file: str, top_module: str = "") -> Dict[str, Any]:
+        """Create a generic Yosys-derived Verilog candidate for supported RTL.
+
+        The caller must still prove equivalence and compare synthesized metrics
+        before presenting this structural candidate as an accepted rewrite.
+        """
+        if not self.yosys_bin:
+            return {"error": "Yosys not available in environment."}
+
+        verilog_path = Path(verilog_file).resolve()
+        top_module = top_module or verilog_path.stem
+        import uuid
+
+        uid = uuid.uuid4().hex[:8]
+        script_path = self.work_dir / f"candidate_{top_module}_{uid}.ys"
+        output_path = self.work_dir / f"candidate_{top_module}_{uid}.v"
+        bom_free_path = None
+        yosys_input_path = verilog_path
+
+        try:
+            source_bytes = verilog_path.read_bytes()
+            if source_bytes.startswith(b"\xef\xbb\xbf"):
+                bom_free_path = self.work_dir / f"candidate_source_{top_module}_{uid}.v"
+                bom_free_path.write_bytes(source_bytes[3:])
+                yosys_input_path = bom_free_path
+
+            with open(script_path, "w", encoding="utf-8") as script:
+                source = str(yosys_input_path).replace(chr(92), "/")
+                candidate = str(output_path).replace(chr(92), "/")
+                script.write(f'read_verilog -sv "{source}"\n')
+                script.write(f'hierarchy -check -top {top_module}\n')
+                script.write('proc; opt; memory; opt; flatten; opt\n')
+                script.write('techmap; opt; abc; opt_clean\n')
+                script.write(f'write_verilog -noattr "{candidate}"\n')
+
+            command = f'"{self.yosys_bin}" -s "{script_path}"'
+            returncode, stdout, stderr = CommandExecutor.run_command(command, timeout=300)
+            raw_log = stdout + "\n" + stderr
+            if returncode != 0 or not output_path.exists():
+                output_path.unlink(missing_ok=True)
+                return {"error": f"Generic Yosys rewrite failed: {stderr.strip() or 'no candidate was written'}", "raw_log": raw_log}
+
+            optimized_code = output_path.read_text(encoding="utf-8")
+            if not optimized_code.strip():
+                output_path.unlink(missing_ok=True)
+                return {"error": "Generic Yosys rewrite produced an empty candidate.", "raw_log": raw_log}
+
+            return {"optimized_code": optimized_code, "path": str(output_path), "raw_log": raw_log}
+        except OSError as exc:
+            output_path.unlink(missing_ok=True)
+            return {"error": f"Unable to build generic Yosys candidate: {exc}"}
+        finally:
+            for temporary_path in (script_path, bom_free_path):
+                try:
+                    if temporary_path and temporary_path.exists():
+                        temporary_path.unlink()
+                except OSError:
+                    pass
+
     def _parse_stat(self, text: str) -> int:
         stat_marker = 'Printing statistics.'
         stat_section_start = text.rfind(stat_marker)

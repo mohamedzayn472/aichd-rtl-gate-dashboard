@@ -1,5 +1,5 @@
 "use client";
-/* AICHD Glass Observatory: evidence-first RTL workbench with restrained spectral motion and safe source-level optimization guidance. */
+/* AICHD Glass Observatory: evidence-first RTL workbench with restrained spectral motion and generic synthesis-validated optimization guidance. */
 import { useEffect, useRef, useState } from "react";
 import DashboardPageLayout from "@/components/dashboard/layout";
 import ProcessorIcon from "@/components/icons/proccesor";
@@ -60,6 +60,7 @@ type PredictApiResponse = {
   gateCount?: number;
   features?: Record<string, number>;
   shapValues?: ShapItem[];
+  optimization_status?: "rewrite_available" | "no_measurable_improvement" | "candidate_unverified" | "synthesis_attention";
   optimizable?: boolean;
   optimized_code?: string;
   diff?: string;
@@ -75,7 +76,7 @@ type PredictApiResponse = {
 };
 type HistoryEntry = { id: string; name: string; timestamp: string; gateCount: number; topFeature: string; code: string };
 type InstrumentTab = "observation" | "explanation" | "optimization" | "evidence" | "report" | "history";
-type OptimizationAssessment = { status: "optimized" | "rewrite-available"; title: string; summary: string; changes: string[]; optimizedCode?: string };
+type OptimizationAssessment = { status: "awaiting" | "rewrite-available" | "no-measurable-improvement" | "candidate-unverified" | "synthesis-attention"; title: string; summary: string; changes: string[]; optimizedCode?: string };
 type InferenceStage = "idle" | "capture" | "structure" | "evidence";
 
 function isValidVerilogFile(name: string) { const lower = name.toLowerCase(); return lower.endsWith(".v") || lower.endsWith(".sv"); }
@@ -92,7 +93,7 @@ function getExplanation(feature: string, importance?: number) {
 function getOptimizationAssessmentFromApi(apiResponse: PredictApiResponse | null): OptimizationAssessment {
   if (!apiResponse) {
     return {
-      status: "optimized",
+      status: "awaiting",
       title: "Awaiting analysis",
       summary: "Run a live estimate to receive an evidence-aware source assessment.",
       changes: [],
@@ -102,39 +103,54 @@ function getOptimizationAssessmentFromApi(apiResponse: PredictApiResponse | null
   const synthesisDiagnostic = apiResponse.synthesisDiagnostics
     ? Object.values(apiResponse.synthesisDiagnostics).filter(Boolean).join(" ")
     : "";
+  const changes = [
+    ...(apiResponse.transformations_applied?.map((transformation) => `${transformation.rule}: ${transformation.rationale} (${transformation.location})`) || []),
+    ...(apiResponse.warnings || []),
+  ];
+  const area = apiResponse.impact?.area?.cell_count;
+  const timing = apiResponse.impact?.timing?.logic_levels;
+  if (area) changes.push(`Yosys cell-count evidence: ${area.baseline} → ${area.optimized} cells (${area.delta_pct > 0 ? "+" : ""}${area.delta_pct}%).`);
+  if (timing) changes.push(`Yosys logic-depth evidence: ${timing.baseline} → ${timing.optimized} levels (${timing.delta_pct > 0 ? "+" : ""}${timing.delta_pct}%).`);
 
   if (apiResponse.optimizable && apiResponse.optimized_code) {
-    const changes = apiResponse.transformations_applied?.map((t) => `${t.rule}: ${t.rationale} (${t.location})`) || [];
     if (apiResponse.functional_equivalence !== "PASS") {
       changes.push(`Equivalence check status: ${apiResponse.functional_equivalence}`);
-    }
-    
-    // Formatting PPA
-    if (apiResponse.impact?.area?.cell_count) {
-      const area = apiResponse.impact.area.cell_count;
-      changes.push(`Area impact: ${area.baseline} -> ${area.optimized} cells (${area.delta_pct > 0 ? '+' : ''}${area.delta_pct}%).`);
     }
 
     return {
       status: "rewrite-available",
-      title: synthesisDiagnostic ? "A source-level rewrite is available" : "A safe source-level rewrite is available",
+      title: synthesisDiagnostic ? "A candidate rewrite needs synthesis review" : "A verified RTL rewrite is available",
       summary: synthesisDiagnostic
         ? `AICHD retained the model estimate and source rewrite, but Yosys could not produce complete PPA evidence. Functional Equivalence: ${apiResponse.functional_equivalence}.`
-        : `AICHD found deterministic optimization opportunities in the submitted RTL, confirmed via Yosys synthesis. Functional Equivalence: ${apiResponse.functional_equivalence}.`,
+        : `AICHD generated a candidate from the submitted supported RTL, proved equivalence with Yosys, and retained it because it improved measured synthesis evidence. Functional Equivalence: ${apiResponse.functional_equivalence}.`,
       changes: synthesisDiagnostic ? [...changes, `Synthesis diagnostic: ${synthesisDiagnostic}`] : changes,
       optimizedCode: apiResponse.optimized_code,
     };
   }
 
+  if (apiResponse.optimization_status === "candidate_unverified") {
+    return {
+      status: "candidate-unverified",
+      title: "Candidate withheld pending proof",
+      summary: "AICHD generated a structural candidate but did not expose corrected RTL because formal equivalence was not proven. The submitted source remains authoritative.",
+      changes: changes.length ? changes : ["No automatic source change was applied."],
+    };
+  }
+
+  if (synthesisDiagnostic || apiResponse.optimization_status === "synthesis_attention") {
+    return {
+      status: "synthesis-attention",
+      title: "ML estimate available; synthesis needs attention",
+      summary: "The model estimate and explanatory evidence are valid, but Yosys could not complete the synthesis-validation path. Review the diagnostic before treating PPA data as available.",
+      changes: [...changes, ...(synthesisDiagnostic ? [`Synthesis diagnostic: ${synthesisDiagnostic}`] : [])],
+    };
+  }
+
   return {
-    status: "optimized",
-    title: synthesisDiagnostic ? "ML estimate available; synthesis needs attention" : "Optimized for automatic source checks",
-    summary: synthesisDiagnostic
-      ? "The model estimate and explanatory evidence are valid, but Yosys could not complete synthesis for this source. Review the diagnostic before treating PPA data as available."
-      : "No safe Boolean-identity rewrite was detected by the backend. For the automatic checks AICHD can prove locally, the submitted RTL is optimized.",
-    changes: synthesisDiagnostic
-      ? [...(apiResponse.warnings || []), `Synthesis diagnostic: ${synthesisDiagnostic}`]
-      : (apiResponse.warnings || ["No deterministic, semantics-preserving rewrite was found."]),
+    status: "no-measurable-improvement",
+    title: "No measurable safe improvement found",
+    summary: "AICHD did not apply corrected RTL because the supported synthesis-derived candidate did not reduce cell count or logic depth. This is a measured result for the selected target, not a claim that the source is globally optimal.",
+    changes: changes.length ? changes : ["No verified candidate was generated for this supported design."],
   };
 }
 
@@ -257,7 +273,7 @@ export default function PredictTool() {
         <AnimatePresence mode="wait">
           {activeTab === "observation" && (hasResult ? <motion.div key="observation-result" className="obs-live-result" initial={false} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 290, damping: 28 }}><div className="obs-gate-orb"><span>ESTIMATED GATES</span><b><NumberFlow value={gateCount} /></b><small>NAND2 EQUIVALENT</small></div><div className="obs-result-readout"><div><span>TOP INFLUENCE</span><b>{topFeature}</b><small>{typeof topImpact === "number" ? `${topImpact >= 0 ? "+" : ""}${topImpact.toFixed(4)} contribution` : "Feature attribution returned"}</small></div><div className="obs-structural-row"><span><b><NumberFlow value={totalInputs} /></b> inputs</span><span><b><NumberFlow value={totalOutputs} /></b> outputs</span><span><b><NumberFlow value={totalWires} /></b> wires</span></div></div></motion.div> : <EmptyResult key="observation-empty" title="Source instrument ready." detail="Run an estimate to open the gate-count and structural evidence surfaces." />)}
           {activeTab === "explanation" && (hasResult ? <motion.div key="explanation-result" className="obs-explanation-view" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}><div className="obs-explanation-lead"><Lightbulb /><div><span>MODEL-LEVEL EXPLANATION</span><h3>{explanation.title}</h3><p>{explanation.summary}</p></div></div><div className="obs-explanation-action"><Info /><div><b>Recommended next check</b><p>{explanation.action}</p></div></div><div className="obs-feature-detail"><div><span>EXTRACTED STRUCTURE</span><small>{Object.keys(features).length} values returned</small></div><div className="obs-feature-detail-grid">{Object.entries(features).map(([key, value]) => <div key={key}><span>{key}</span><b>{value}</b></div>)}</div></div></motion.div> : <EmptyResult key="explanation-empty" title="Detailed explanation will appear here." detail="Run an estimate to connect the top feature contribution with extracted RTL structure." />)}
-          {activeTab === "optimization" && (hasResult ? <motion.div key="optimization-result" className={`obs-optimization-view ${optimization.status}`} initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}><div className="obs-optimization-lead">{optimization.status === "rewrite-available" ? <Sparkles /> : <BadgeCheck />}<div><span>RTL OPTIMIZATION ASSESSMENT</span><h3>{optimization.title}</h3><p>{optimization.summary}</p></div></div>{optimization.status === "rewrite-available" && optimization.optimizedCode ? <><div className="obs-code-comparison"><section><header><span>SUBMITTED RTL</span><Code2 /></header><pre>{code}</pre></section><ArrowRight className="obs-code-arrow" aria-hidden="true" /><section className="obs-corrected-code"><header><span>CORRECTED RTL</span><BadgeCheck /></header><pre>{optimization.optimizedCode}</pre></section></div><div className="obs-optimization-actions"><div><b>What changed</b>{optimization.changes.map((change) => <p key={change}>{change}</p>)}</div><div><button onClick={copyOptimizedCode}>{optimizationAction === "copied" ? <Check /> : <Clipboard />}{optimizationAction === "copied" ? "Copied" : "Copy corrected code"}</button><button onClick={useOptimizedCode}>Use corrected source <ArrowRight /></button></div></div><small className="obs-optimization-boundary">The corrected RTL is limited to deterministic local Boolean identities. Re-run inference and validate with synthesis before accepting any area or timing outcome.</small></> : <div className="obs-optimized-state"><BadgeCheck /><div><b>No automatic rewrite is needed</b>{optimization.changes.map((change) => <p key={change}>{change}</p>)}</div></div>}</motion.div> : <EmptyResult key="optimization-empty" title="Optimization guidance will appear here." detail="Run a live estimate to receive an evidence-aware source assessment." />)}
+          {activeTab === "optimization" && (hasResult ? <motion.div key="optimization-result" className={`obs-optimization-view ${optimization.status}`} initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}><div className="obs-optimization-lead">{optimization.status === "rewrite-available" ? <Sparkles /> : <Info />}<div><span>RTL OPTIMIZATION ASSESSMENT</span><h3>{optimization.title}</h3><p>{optimization.summary}</p></div></div>{optimization.status === "rewrite-available" && optimization.optimizedCode ? <><div className="obs-code-comparison"><section><header><span>SUBMITTED RTL</span><Code2 /></header><pre>{code}</pre></section><ArrowRight className="obs-code-arrow" aria-hidden="true" /><section className="obs-corrected-code"><header><span>VERIFIED CANDIDATE RTL</span><BadgeCheck /></header><pre>{optimization.optimizedCode}</pre></section></div><div className="obs-optimization-actions"><div><b>Validation evidence</b>{optimization.changes.map((change) => <p key={change}>{change}</p>)}</div><div><button onClick={copyOptimizedCode}>{optimizationAction === "copied" ? <Check /> : <Clipboard />}{optimizationAction === "copied" ? "Copied" : "Copy corrected code"}</button><button onClick={useOptimizedCode}>Use corrected source <ArrowRight /></button></div></div><small className="obs-optimization-boundary">The candidate was generated from supported RTL, formally checked for equivalence, and retained only when it reduced the selected Yosys cell-count or logic-depth metric. Re-run inference after applying it.</small></> : <div className="obs-optimized-state"><Info /><div><b>{optimization.status === "candidate-unverified" ? "No candidate source was applied" : optimization.status === "synthesis-attention" ? "PPA validation is incomplete" : "No verified rewrite was applied"}</b>{optimization.changes.map((change) => <p key={change}>{change}</p>)}</div></div>}</motion.div> : <EmptyResult key="optimization-empty" title="Optimization guidance will appear here." detail="Run a live estimate to receive an evidence-aware source assessment." />)}
           {activeTab === "evidence" && (hasResult ? <motion.div key="evidence-result" className="obs-evidence-view" initial={false} animate={{ opacity: 1, y: 0 }}><p>Positive values increase the estimated gate count; negative values reduce it.</p><div className="h-[260px] w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={shapData} layout="vertical" margin={{ left: 4, right: 12 }}><CartesianGrid strokeDasharray="3 3" stroke="rgba(160,230,247,.18)" /><XAxis type="number" stroke="#8bb5c4" tick={{ fontSize: 10 }} /><YAxis dataKey="feature" type="category" width={125} tick={{ fontSize: 10, fill: "#c9e9f0" }} /><Tooltip contentStyle={{ backgroundColor: "rgba(11, 26, 56, .92)", backdropFilter: "blur(16px)", borderColor: "rgba(160,230,247,.35)", borderRadius: "12px" }} /><Bar dataKey="importance" fill="#8be8f6" radius={[0, 6, 6, 0]} animationDuration={reduceMotion ? 0 : 1200} animationEasing="ease-out" /></BarChart></ResponsiveContainer></div></motion.div> : <EmptyResult key="evidence-empty" title="Evidence will appear here." detail="The chart is populated only after a successful live inference." />)}
           {activeTab === "report" && (hasResult ? <motion.div key="report-result" className="obs-report-view" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}><div className="obs-report-heading"><div><FileText /><span>INFERENCE REPORT</span><h3>{uploadedFileName ?? "untitled_module.v"}</h3><p>Generated from this live result and held in your browser until you copy or download it.</p></div><div className="obs-report-actions"><button onClick={copyReport}>{reportAction === "copied" ? <Check /> : <Clipboard />}{reportAction === "copied" ? "Copied" : "Copy"}</button><button onClick={downloadReport}><FileDown />{reportAction === "downloaded" ? "Downloaded" : "Download .md"}</button></div></div><div className="obs-report-preview"><p>Gate estimate: <b>{gateCount} NAND2-equivalent gates</b></p><p>Primary driver: <b>{topFeature}</b></p><p>{explanation.summary}</p><small>The report records returned model data and explains the estimate; it does not claim physical synthesis equivalence.</small></div></motion.div> : <EmptyResult key="report-empty" title="Your inference report will appear here." detail="Run the live model first, then copy or download a report created from returned evidence." />)}
           {activeTab === "history" && <motion.div key="history" className="obs-history-view" initial={false} animate={{ opacity: 1, y: 0 }}>{history.length === 0 ? <EmptyResult title="No local observations yet." detail="Completed estimates are retained in this browser for quick source restoration." /> : <><div className="obs-history-heading"><span>Recent local results</span><button className="obs-text-button" onClick={() => setHistory([])}>Clear history</button></div>{history.map((item) => <button className="obs-history-item" key={item.id} onClick={() => { setCode(item.code); setUploadedFileName(item.name); setActiveTab("observation"); setHasResult(false); }}><span>{item.timestamp}</span><b>{item.name}</b><small>{item.gateCount} gates · {item.topFeature}</small><em>Restore →</em></button>)}</>}</motion.div>}

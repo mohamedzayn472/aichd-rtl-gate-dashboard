@@ -179,6 +179,7 @@ export async function POST(req: Request) {
           gateCount: Math.max(0, Math.round((ml_prediction.gate_count as number) || 0)),
           features: ml_prediction.features || {},
           shapValues: ml_prediction.shap_values || [],
+          optimization_status: result.optimization_status,
           optimizable: result.optimizable,
           optimized_code: result.optimized_code,
           diff: result.diff,

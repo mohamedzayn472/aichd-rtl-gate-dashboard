@@ -67,6 +67,29 @@ Printing statistics.
     assert runner._parse_stat(output) == 1
 
 
+def test_yosys_runner_builds_generic_structural_candidate(tmp_path, monkeypatch):
+    source = tmp_path / "candidate.v"
+    source.write_text("module candidate(input a, output y); assign y = a; endmodule\n", encoding="utf-8")
+
+    def fake_run_command(command, timeout):
+        script_match = re.search(r'-s "([^"]+)"', command)
+        script = Path(script_match.group(1))
+        output_match = re.search(r'write_verilog -noattr "([^"]+)"', script.read_text(encoding="utf-8"))
+        output = Path(output_match.group(1))
+        output.write_text("module candidate(input a, output y); assign y = a; endmodule\n", encoding="utf-8")
+        return 0, "Yosys candidate complete", ""
+
+    monkeypatch.setattr("scripts.synthesis_runner.YosysSynthesizer.get_yosys_binary", lambda: "yosys")
+    monkeypatch.setattr("scripts.synthesis_runner.CommandExecutor.run_command", fake_run_command)
+    runner = YosysRunner(work_dir=str(tmp_path / "synth"))
+
+    candidate = runner.build_optimized_candidate(str(source), "candidate")
+
+    assert "error" not in candidate
+    assert "module candidate" in candidate["optimized_code"]
+    assert Path(candidate["path"]).exists()
+
+
 def test_optimizer_preserves_ml_prediction_when_synthesis_fails(tmp_path, monkeypatch, capsys):
     """Synthesis diagnostics are supplemental; inference remains a valid response."""
     from scripts import optimize_rtl
@@ -101,3 +124,51 @@ def test_optimizer_preserves_ml_prediction_when_synthesis_fails(tmp_path, monkey
     assert result["ml_prediction"]["gate_count"] == 31
     assert result["synthesis_diagnostics"]["baseline"] == "mocked Yosys hierarchy failure"
     assert any("ML gate estimate" in warning for warning in result["warnings"])
+
+
+def test_optimizer_withholds_equivalent_generic_candidate_without_ppa_gain(tmp_path, monkeypatch, capsys):
+    """Formal PASS alone is insufficient: a PPA-worse candidate must be withheld."""
+    from scripts import optimize_rtl
+
+    input_path = tmp_path / "original.v"
+    input_path.write_text("module original(input a, output y); assign y = a; endmodule\n", encoding="utf-8")
+    candidate_path = tmp_path / "candidate.v"
+    candidate_code = "module original(input a, output y); wire keep; assign keep = a; assign y = keep; endmodule\n"
+
+    class NoTransformRules:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def optimize(self, code):
+            return code, []
+
+    class GenericCandidateSynthesis:
+        def run_synthesis(self, path, *args, **kwargs):
+            if Path(path) == candidate_path:
+                return {"area": {"cell_count": 7}, "timing": {"logic_levels": 4}}
+            return {"area": {"cell_count": 6}, "timing": {"logic_levels": 3}}
+
+        def build_optimized_candidate(self, *args, **kwargs):
+            candidate_path.write_text(candidate_code, encoding="utf-8")
+            return {"optimized_code": candidate_code, "path": str(candidate_path)}
+
+    class PassingEquivalence:
+        def check_equivalence(self, *args, **kwargs):
+            return "PASS"
+
+    monkeypatch.setattr("scripts.predict.predict_single", lambda **kwargs: (31, {"struct_num_inputs": 1}, []))
+    monkeypatch.setattr("scripts.utils.ConfigLoader.load_config", lambda _path: {})
+    monkeypatch.setattr("scripts.rules_engine.RulesEngine", NoTransformRules)
+    monkeypatch.setattr("scripts.synthesis_runner.get_synthesis_runner", lambda: GenericCandidateSynthesis())
+    monkeypatch.setattr("scripts.equivalence_checker.EquivalenceChecker", PassingEquivalence)
+    monkeypatch.setattr(sys, "argv", ["optimize_rtl.py", "--input", str(input_path), "--no-shap"])
+
+    optimize_rtl.main()
+
+    result = json.loads(capsys.readouterr().out)
+    assert result["optimization_status"] == "no_measurable_improvement"
+    assert result["functional_equivalence"] == "PASS"
+    assert result["optimizable"] is False
+    assert result["optimized_code"] is None
+    assert result["impact"]["area"]["cell_count"] == {"baseline": 6, "optimized": 7, "delta_pct": 16.67}
+    assert not candidate_path.exists()
