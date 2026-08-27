@@ -5,6 +5,7 @@ that the optimized code is functionally identical to the baseline.
 """
 import os
 import logging
+import re
 from pathlib import Path
 
 from scripts.yosys_synthesis import YosysSynthesizer
@@ -87,13 +88,13 @@ class EquivalenceChecker:
                 pass
         output = stdout + "\n" + stderr
 
-        # Parse equiv_status output
+        # ``equiv_status -assert`` is the authorization boundary.  Earlier
+        # progress lines such as "Successfully proved N cells" are not enough:
+        # a candidate may still contain unproven cells.  Accept only Yosys's
+        # final all-equivalence success marker with a successful process exit.
         if returncode == 0 and "Equivalence successfully proven!" in output:
             return "PASS"
-        elif "Successfully proved" in output and "Unproven" not in output and "Failed" not in output:
-            return "PASS"
-        elif returncode != 0 and "Failed" in output:
+        if returncode != 0 and re.search(r"\b(failed|failure)\b", output, re.IGNORECASE):
             return "FAIL"
-        else:
-            logger.warning(f"Equivalence check for {top_module} returned unverified/failed status. Returncode: {returncode}")
-            return "UNVERIFIED"
+        logger.warning(f"Equivalence check for {top_module} returned unverified/failed status. Returncode: {returncode}")
+        return "UNVERIFIED"

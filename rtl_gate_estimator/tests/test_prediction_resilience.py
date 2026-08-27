@@ -224,3 +224,62 @@ def test_optimizer_withholds_sequential_candidate_without_complete_stateful_proo
     assert result["bounded_verification"]["status"] == "SKIPPED"
     assert "sequential state" in result["warnings"][0]
     assert not candidate_path.exists()
+
+
+def test_optimizer_rolls_back_wrong_polarity_candidate_on_exhaustive_mismatch(tmp_path, monkeypatch, capsys):
+    """The independent truth-table gate must reject a candidate with XNOR/XOR polarity reversed."""
+    from scripts import optimize_rtl
+
+    input_path = tmp_path / "full_adder.v"
+    input_path.write_text(
+        "module full_adder(input a,input b,input cin,output sum,output cout); "
+        "assign sum=a^b^cin; assign cout=(a&b)|(b&cin)|(a&cin); endmodule\n",
+        encoding="utf-8",
+    )
+    candidate_path = tmp_path / "wrong_polarity.v"
+    candidate_code = (
+        "module full_adder(input a,input b,input cin,output sum,output cout); "
+        "wire _0_,_1_,_2_,_3_; assign _1_=a|cin; assign _2_=~(a&cin); "
+        "assign _3_=~(_1_&_2_); assign sum=b^_3_; "
+        "assign _0_=~(b&_1_); assign cout=~(_2_&_0_); endmodule\n"
+    )
+
+    class NoTransformRules:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def optimize(self, code):
+            return code, []
+
+    class BetterButWrongCandidateSynthesis:
+        calls = 0
+
+        def run_synthesis(self, *args, **kwargs):
+            self.calls += 1
+            return {"area": {"cell_count": 3 if self.calls > 1 else 8}, "timing": {"logic_levels": 2 if self.calls > 1 else 5}}
+
+        def build_optimized_candidate(self, *args, **kwargs):
+            candidate_path.write_text(candidate_code, encoding="utf-8")
+            return {"optimized_code": candidate_code, "path": str(candidate_path)}
+
+    class PassingFormalCheck:
+        def check_equivalence(self, *args, **kwargs):
+            return "PASS"
+
+    monkeypatch.setattr("scripts.predict.predict_single", lambda **kwargs: (31, {"struct_num_inputs": 3}, []))
+    monkeypatch.setattr("scripts.utils.ConfigLoader.load_config", lambda _path: {})
+    monkeypatch.setattr("scripts.rules_engine.RulesEngine", NoTransformRules)
+    monkeypatch.setattr("scripts.synthesis_runner.get_synthesis_runner", lambda: BetterButWrongCandidateSynthesis())
+    monkeypatch.setattr("scripts.equivalence_checker.EquivalenceChecker", PassingFormalCheck)
+    monkeypatch.setattr(sys, "argv", ["optimize_rtl.py", "--input", str(input_path), "--no-shap"])
+
+    optimize_rtl.main()
+
+    result = json.loads(capsys.readouterr().out)
+    assert result["optimization_status"] == "candidate_unverified"
+    assert result["functional_equivalence"] == "PASS"
+    assert result["bounded_verification"]["status"] == "FAIL"
+    assert "input vector 0" in result["bounded_verification"]["reason"]
+    assert result["optimizable"] is False
+    assert result["optimized_code"] is None
+    assert not candidate_path.exists()

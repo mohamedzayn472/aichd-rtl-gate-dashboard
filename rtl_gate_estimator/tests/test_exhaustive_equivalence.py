@@ -80,6 +80,32 @@ endmodule
     assert result["input_bits"] == 3
     assert result["vector_count"] == 8
 
+    # Verify the human-readable truth table as well as the verifier's PASS
+    # result. Output strings preserve module-port order: sum, then cout.
+    expected_vectors = {
+        0: "00",  # 000 -> sum=0, cout=0
+        1: "10",  # 001 -> sum=1, cout=0
+        2: "10",  # 010 -> sum=1, cout=0
+        3: "01",  # 011 -> sum=0, cout=1
+        4: "10",  # 100 -> sum=1, cout=0
+        5: "01",  # 101 -> sum=0, cout=1
+        6: "01",  # 110 -> sum=0, cout=1
+        7: "11",  # 111 -> sum=1, cout=1
+    }
+    baseline_path = tmp_path / "baseline.v"
+    candidate_path = tmp_path / "candidate.v"
+    checker = ExhaustiveEquivalenceChecker(work_dir=str(tmp_path / "truth_table"), max_input_bits=8)
+    workspace = tmp_path / "truth_table" / "manual_vector_trace"
+    workspace.mkdir(parents=True, exist_ok=True)
+    port_data = checker._read_ports(baseline_path, "dut", workspace)
+    assert not isinstance(port_data, dict)
+    inputs, outputs, is_sequential = port_data
+    assert not is_sequential
+    original_vectors = checker._simulate(baseline_path, "dut", inputs, outputs, 8, workspace, "original")
+    candidate_vectors = checker._simulate(candidate_path, "dut", inputs, outputs, 8, workspace, "candidate")
+    assert original_vectors == expected_vectors
+    assert candidate_vectors == expected_vectors
+
 
 def test_half_adder_and_multiplexer_preserve_shared_combinational_logic(tmp_path):
     baseline = """
