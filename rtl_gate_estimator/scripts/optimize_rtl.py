@@ -169,13 +169,19 @@ def main() -> None:
 
         bounded_verification = exhaustive_checker.check_equivalence(str(input_path), str(candidate_path), top_module)
         bounded_status = bounded_verification["status"]
-        if bounded_status in {"FAIL", "UNVERIFIED"}:
+        stateful_proof_incomplete = bounded_status == "SKIPPED" and "sequential state" in bounded_verification["reason"].lower()
+        if bounded_status in {"FAIL", "UNVERIFIED"} or stateful_proof_incomplete:
+            verification_warning = (
+                "The design contains sequential state and no complete stateful proof is configured. The candidate is withheld and the submitted RTL remains authoritative."
+                if stateful_proof_incomplete
+                else "Formal equivalence passed, but independent bounded verification did not establish identical outputs. The candidate is withheld and the submitted RTL remains authoritative."
+            )
             print(json.dumps(result(
                 "candidate_unverified",
                 optimizable=False,
                 equivalence=equivalence,
                 impact=baseline_only_impact(baseline_ppa),
-                warnings=["Formal equivalence passed, but independent bounded verification did not establish identical outputs. The candidate is withheld and the submitted RTL remains authoritative.", bounded_verification["reason"]],
+                warnings=[verification_warning, bounded_verification["reason"]],
                 active_transformations=transformations,
                 bounded_verification=bounded_verification,
             ), indent=2))

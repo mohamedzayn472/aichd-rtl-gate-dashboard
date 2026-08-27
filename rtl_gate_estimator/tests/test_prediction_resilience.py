@@ -172,3 +172,55 @@ def test_optimizer_withholds_equivalent_generic_candidate_without_ppa_gain(tmp_p
     assert result["optimized_code"] is None
     assert result["impact"]["area"]["cell_count"] == {"baseline": 6, "optimized": 7, "delta_pct": 16.67}
     assert not candidate_path.exists()
+
+
+def test_optimizer_withholds_sequential_candidate_without_complete_stateful_proof(tmp_path, monkeypatch, capsys):
+    """A short temporal check must not expose rewritten stateful RTL as verified."""
+    from scripts import optimize_rtl
+
+    input_path = tmp_path / "counter.v"
+    input_path.write_text("module counter(input clk, output reg q); always @(posedge clk) q <= ~q; endmodule\n", encoding="utf-8")
+    candidate_path = tmp_path / "candidate.v"
+    candidate_code = "module counter(input clk, output reg q); wire next_q; assign next_q = ~q; always @(posedge clk) q <= next_q; endmodule\n"
+
+    class NoTransformRules:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def optimize(self, code):
+            return code, []
+
+    class GenericCandidateSynthesis:
+        def run_synthesis(self, *args, **kwargs):
+            return {"area": {"cell_count": 6}, "timing": {"logic_levels": 2}}
+
+        def build_optimized_candidate(self, *args, **kwargs):
+            candidate_path.write_text(candidate_code, encoding="utf-8")
+            return {"optimized_code": candidate_code, "path": str(candidate_path)}
+
+    class PassingEquivalence:
+        def check_equivalence(self, *args, **kwargs):
+            return "PASS"
+
+    class StatefulSkippedExhaustiveCheck:
+        def check_equivalence(self, *args, **kwargs):
+            return {"status": "SKIPPED", "method": "exhaustive_simulation", "reason": "Design contains sequential state; bounded exhaustive simulation is reserved for combinational candidates."}
+
+    monkeypatch.setattr("scripts.predict.predict_single", lambda **kwargs: (31, {"struct_num_inputs": 1}, []))
+    monkeypatch.setattr("scripts.utils.ConfigLoader.load_config", lambda _path: {})
+    monkeypatch.setattr("scripts.rules_engine.RulesEngine", NoTransformRules)
+    monkeypatch.setattr("scripts.synthesis_runner.get_synthesis_runner", lambda: GenericCandidateSynthesis())
+    monkeypatch.setattr("scripts.equivalence_checker.EquivalenceChecker", PassingEquivalence)
+    monkeypatch.setattr("scripts.exhaustive_checker.ExhaustiveEquivalenceChecker", StatefulSkippedExhaustiveCheck)
+    monkeypatch.setattr(sys, "argv", ["optimize_rtl.py", "--input", str(input_path), "--no-shap"])
+
+    optimize_rtl.main()
+
+    result = json.loads(capsys.readouterr().out)
+    assert result["optimization_status"] == "candidate_unverified"
+    assert result["functional_equivalence"] == "PASS"
+    assert result["optimizable"] is False
+    assert result["optimized_code"] is None
+    assert result["bounded_verification"]["status"] == "SKIPPED"
+    assert "sequential state" in result["warnings"][0]
+    assert not candidate_path.exists()
