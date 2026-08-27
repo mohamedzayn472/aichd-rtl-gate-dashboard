@@ -68,6 +68,7 @@ def main() -> None:
 
     from scripts.predict import predict_single
     from scripts.equivalence_checker import EquivalenceChecker
+    from scripts.exhaustive_checker import ExhaustiveEquivalenceChecker
     from scripts.rules_engine import RulesEngine
     from scripts.synthesis_runner import get_synthesis_runner
     from scripts.utils import ConfigLoader
@@ -88,6 +89,7 @@ def main() -> None:
         rules_engine = RulesEngine()
     synth_runner = get_synthesis_runner()
     equiv_checker = EquivalenceChecker()
+    exhaustive_checker = ExhaustiveEquivalenceChecker()
     baseline_ppa = synth_runner.run_synthesis(str(input_path), top_module, target=args.target)
 
     # Keep static identities as a fast first pass. Generic structural rewriting
@@ -109,7 +111,7 @@ def main() -> None:
                 "rationale": "Generated a technology-independent structural candidate from the supported RTL, pending formal equivalence and measurable PPA validation.",
             }]
 
-    def result(status: str, *, optimizable: bool, optimized_code: str | None = None, equivalence: str = "N/A", impact: Dict[str, Any] | None = None, warnings: List[str] | None = None, active_transformations: List[Dict[str, str]] | None = None, diagnostics: Dict[str, str] | None = None) -> Dict[str, Any]:
+    def result(status: str, *, optimizable: bool, optimized_code: str | None = None, equivalence: str = "N/A", impact: Dict[str, Any] | None = None, warnings: List[str] | None = None, active_transformations: List[Dict[str, str]] | None = None, diagnostics: Dict[str, str] | None = None, bounded_verification: Dict[str, Any] | None = None) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
             "detected_hdl": "verilog",
             "optimization_status": status,
@@ -124,6 +126,8 @@ def main() -> None:
         }
         if diagnostics:
             payload["synthesis_diagnostics"] = diagnostics
+        if bounded_verification:
+            payload["bounded_verification"] = bounded_verification
         return payload
 
     if "error" in baseline_ppa:
@@ -163,6 +167,20 @@ def main() -> None:
             ), indent=2))
             return
 
+        bounded_verification = exhaustive_checker.check_equivalence(str(input_path), str(candidate_path), top_module)
+        bounded_status = bounded_verification["status"]
+        if bounded_status in {"FAIL", "UNVERIFIED"}:
+            print(json.dumps(result(
+                "candidate_unverified",
+                optimizable=False,
+                equivalence=equivalence,
+                impact=baseline_only_impact(baseline_ppa),
+                warnings=["Formal equivalence passed, but independent bounded verification did not establish identical outputs. The candidate is withheld and the submitted RTL remains authoritative.", bounded_verification["reason"]],
+                active_transformations=transformations,
+                bounded_verification=bounded_verification,
+            ), indent=2))
+            return
+
         candidate_ppa = synth_runner.run_synthesis(str(candidate_path), top_module, target=args.target)
         if "error" in candidate_ppa:
             print(json.dumps(result(
@@ -173,6 +191,7 @@ def main() -> None:
                 warnings=["Formal equivalence passed, but candidate synthesis could not complete. No corrected RTL is offered without measurable PPA validation."],
                 active_transformations=transformations,
                 diagnostics={"optimized": candidate_ppa["error"]},
+                bounded_verification=bounded_verification,
             ), indent=2))
             return
 
@@ -187,6 +206,7 @@ def main() -> None:
                 impact=impact,
                 warnings=["Formal equivalence passed, but the generic candidate showed no cell-count or logic-depth reduction. It is withheld to avoid a cosmetic rewrite."],
                 active_transformations=transformations,
+                bounded_verification=bounded_verification,
             ), indent=2))
             return
 
@@ -196,8 +216,9 @@ def main() -> None:
             optimized_code=candidate_code,
             equivalence=equivalence,
             impact=impact,
-            warnings=["Candidate generated from supported RTL with Yosys, formally proven equivalent, and retained only because it improved measured synthesis evidence."],
+            warnings=["Candidate generated from supported RTL with Yosys, formally proven equivalent, independently exhaustively checked when within the bounded combinational domain, and retained only because it improved measured synthesis evidence."],
             active_transformations=transformations,
+            bounded_verification=bounded_verification,
         ), indent=2))
     finally:
         if candidate_path:

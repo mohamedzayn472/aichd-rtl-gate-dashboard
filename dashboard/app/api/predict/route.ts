@@ -188,6 +188,7 @@ export async function POST(req: Request) {
           transformations_applied: result.transformations_applied,
           warnings: result.warnings,
           synthesisDiagnostics: result.synthesis_diagnostics,
+          boundedVerification: result.bounded_verification,
           syntax_error: result.syntax_error,
           raw: result,
         });

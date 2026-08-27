@@ -72,6 +72,7 @@ type PredictApiResponse = {
   transformations_applied?: Array<{ rule: string; location: string; rationale: string }>;
   warnings?: string[];
   synthesisDiagnostics?: { baseline?: string; optimized?: string };
+  boundedVerification?: { status?: "PASS" | "FAIL" | "SKIPPED" | "UNVERIFIED"; method?: string; reason?: string; input_bits?: number; vector_count?: number };
   syntax_error?: string;
 };
 type HistoryEntry = { id: string; name: string; timestamp: string; gateCount: number; topFeature: string; code: string };
@@ -109,8 +110,12 @@ function getOptimizationAssessmentFromApi(apiResponse: PredictApiResponse | null
   ];
   const area = apiResponse.impact?.area?.cell_count;
   const timing = apiResponse.impact?.timing?.logic_levels;
+  const boundedVerification = apiResponse.boundedVerification;
   if (area) changes.push(`Yosys cell-count evidence: ${area.baseline} → ${area.optimized} cells (${area.delta_pct > 0 ? "+" : ""}${area.delta_pct}%).`);
   if (timing) changes.push(`Yosys logic-depth evidence: ${timing.baseline} → ${timing.optimized} levels (${timing.delta_pct > 0 ? "+" : ""}${timing.delta_pct}%).`);
+  if (boundedVerification?.status === "PASS") changes.push(`Independent exhaustive verification: PASS across ${boundedVerification.vector_count ?? 0} of ${boundedVerification.vector_count ?? 0} primary-input vectors${boundedVerification.input_bits !== undefined ? ` (${boundedVerification.input_bits} input bits)` : ""}.`);
+  if (boundedVerification?.status === "SKIPPED") changes.push(`Independent exhaustive verification: not applicable (${boundedVerification.reason ?? "outside the bounded combinational domain"}). Formal equivalence remains required.`);
+  if (boundedVerification?.status === "FAIL" || boundedVerification?.status === "UNVERIFIED") changes.push(`Independent exhaustive verification: ${boundedVerification.status} (${boundedVerification.reason ?? "candidate withheld"}).`);
 
   if (apiResponse.optimizable && apiResponse.optimized_code) {
     if (apiResponse.functional_equivalence !== "PASS") {
@@ -122,7 +127,7 @@ function getOptimizationAssessmentFromApi(apiResponse: PredictApiResponse | null
       title: synthesisDiagnostic ? "A candidate rewrite needs synthesis review" : "A verified RTL rewrite is available",
       summary: synthesisDiagnostic
         ? `AICHD retained the model estimate and source rewrite, but Yosys could not produce complete PPA evidence. Functional Equivalence: ${apiResponse.functional_equivalence}.`
-        : `AICHD generated a candidate from the submitted supported RTL, proved equivalence with Yosys, and retained it because it improved measured synthesis evidence. Functional Equivalence: ${apiResponse.functional_equivalence}.`,
+        : `AICHD generated a candidate from the submitted supported RTL, proved equivalence with Yosys, and retained it because it improved measured synthesis evidence. Independent bounded simulation is also required when applicable. Functional Equivalence: ${apiResponse.functional_equivalence}.`,
       changes: synthesisDiagnostic ? [...changes, `Synthesis diagnostic: ${synthesisDiagnostic}`] : changes,
       optimizedCode: apiResponse.optimized_code,
     };
@@ -132,7 +137,7 @@ function getOptimizationAssessmentFromApi(apiResponse: PredictApiResponse | null
     return {
       status: "candidate-unverified",
       title: "Candidate withheld pending proof",
-      summary: "AICHD generated a structural candidate but did not expose corrected RTL because formal equivalence was not proven. The submitted source remains authoritative.",
+      summary: "AICHD generated a structural candidate but did not expose corrected RTL because a required verification gate did not establish equivalence. The submitted source remains authoritative.",
       changes: changes.length ? changes : ["No automatic source change was applied."],
     };
   }
