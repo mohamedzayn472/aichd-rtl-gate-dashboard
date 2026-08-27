@@ -1,5 +1,5 @@
 "use client";
-/* AICHD Glass Observatory shell: preserve the technical observatory identity; motion is atmospheric, brief, and never blocks navigation. */
+/* Circuit Canvas shell: preserve all navigation and command behavior while routing visual motion through a technical drafting-board identity. */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -56,9 +56,9 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
   };
 
   return (
-    <div className="obs-shell">
+    <div className="obs-shell circuit-canvas">
       <AnimatePresence>
-        {arrivalVisible && !motionReduced && <motion.div className="obs-arrival" aria-hidden="true" initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.018, transition: { duration: .34, ease: [0.22, 1, 0.36, 1] } }}><div className="obs-arrival-grid" /><motion.div className="obs-arrival-signal" initial={{ scale: .76, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}><i /><i /><i /><b>AI</b></motion.div><div className="obs-arrival-copy"><span>OBSERVATORY LINK</span><b>AICHD</b><small>Synchronizing inference instruments</small></div><motion.div className="obs-arrival-progress" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.08, ease: [0.22, 1, 0.36, 1] }} /></motion.div>}
+        {arrivalVisible && !motionReduced && <motion.div className="obs-arrival" aria-hidden="true" initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.018, transition: { duration: .34, ease: [0.22, 1, 0.36, 1] } }}><div className="obs-arrival-grid" /><motion.div className="obs-arrival-signal" initial={{ scale: .76, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}><i /><i /><i /><b>AI</b></motion.div><div className="obs-arrival-copy"><span>CIRCUIT CANVAS BOOT</span><b>AICHD</b><small>Routing inference instruments</small></div><motion.div className="obs-arrival-progress" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.08, ease: [0.22, 1, 0.36, 1] }} /></motion.div>}
       </AnimatePresence>
       <div className="obs-starfield" aria-hidden="true" />
       <div className="obs-ambient-orb obs-ambient-indigo" aria-hidden="true" />
@@ -67,7 +67,7 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
       <header className="obs-topbar">
         <Link href="/" className="obs-brand" aria-label="AICHD Observatory home">
           <span className="obs-brand-sigil" aria-hidden="true"><i /><i /><i /></span>
-          <span><b>AICHD</b><small>GLASS OBSERVATORY</small></span>
+          <span><b>AICHD</b><small>CIRCUIT CANVAS</small></span>
         </Link>
         <nav className="obs-nav" aria-label="Primary navigation">
           {navigation.map((item) => (
@@ -92,8 +92,8 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
       {commandOpen && (
         <div className="obs-command-backdrop" role="presentation" onMouseDown={() => setCommandOpen(false)}>
           <section className="obs-command-palette" role="dialog" aria-modal="true" aria-label="Quick navigation" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="obs-command-heading"><span>OBSERVATORY COMMAND</span><button onClick={() => setCommandOpen(false)} aria-label="Close command palette">Esc</button></div>
-            <p>Jump directly to an instrument surface.</p>
+            <div className="obs-command-heading"><span>CIRCUIT CANVAS COMMAND</span><button onClick={() => setCommandOpen(false)} aria-label="Close command palette">Esc</button></div>
+            <p>Jump directly to a connected analysis surface.</p>
             <div className="obs-command-list">
               {navigation.map((item) => <button key={item.href} onClick={() => navigate(item.href)}><em>{item.index}</em><span>{item.label}</span><small>Open →</small></button>)}
             </div>

@@ -9,8 +9,8 @@ const rebelGrotesk = localFont({ src: "../public/fonts/Rebels-Fett.woff2", varia
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  title: { template: "%s – AICHD Observatory", default: "AICHD Observatory — Explainable RTL Gate Estimation" },
-  description: "AICHD is an interactive observatory for explainable RTL gate estimation, structural evidence, and Verilog inference.",
+  title: { template: "%s – AICHD Circuit Canvas", default: "AICHD Circuit Canvas — Explainable RTL Gate Estimation" },
+  description: "AICHD Circuit Canvas is an interactive workspace for explainable RTL gate estimation, structural evidence, and Verilog inference.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

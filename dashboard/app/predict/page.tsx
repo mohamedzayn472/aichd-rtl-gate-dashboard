@@ -1,5 +1,5 @@
 "use client";
-/* AICHD Glass Observatory: evidence-first RTL workbench with restrained spectral motion and generic synthesis-validated optimization guidance. */
+/* Circuit Canvas: preserve every live inference interaction while presenting source, proof, and PPA evidence as connected drafting-board modules. */
 import { useEffect, useRef, useState } from "react";
 import DashboardPageLayout from "@/components/dashboard/layout";
 import ProcessorIcon from "@/components/icons/proccesor";
@@ -241,15 +241,16 @@ export default function PredictTool() {
   const copyOptimizedCode = async () => { if (!optimization.optimizedCode) return; try { await navigator.clipboard.writeText(optimization.optimizedCode); setOptimizationAction("copied"); } catch { setOptimizationAction("idle"); } };
   const useOptimizedCode = () => { if (!optimization.optimizedCode) return; setCode(optimization.optimizedCode); setUploadedFileName(null); setHasResult(false); setOptimizationAction("idle"); setActiveTab("observation"); };
   const selectTab = (tab: InstrumentTab) => { setActiveTab(tab); setReportAction("idle"); setOptimizationAction("idle"); };
-  return <DashboardPageLayout header={{ title: "Inference workbench", description: "LIVE VERILOG / MODEL EVIDENCE", icon: ProcessorIcon }}>
-    <section className="obs-inference-intro"><div><p className="obs-eyebrow">OBSERVATION MODE / SOURCE TO SIGNAL</p><h2>Make the next<br /><em>estimate observable.</em></h2><p>Load a Verilog source, run the current model, and retain the useful evidence in a local Observatory history. No preview-only values are used in this workbench.</p></div><div className={`obs-inference-status ${isRunning ? "is-acquiring" : ""}`}><span>API CHANNEL</span><b>{isRunning ? "Acquiring" : "Ready"}</b><small>{isRunning ? stageLabel : `${history.length} local observations retained`}</small><i /></div></section>
+  return <DashboardPageLayout header={{ title: "Inference workbench", description: "LIVE RTL EVIDENCE", icon: ProcessorIcon }}>
+    <section className="obs-inference-intro circuit-canvas-intro"><div className="circuit-title-block"><p className="obs-eyebrow">ROUTE 02 / SOURCE TO PROOF</p><h2>Route RTL into<br /><em>evidence.</em></h2><p>Place Verilog on the canvas, run the live model, and retain its measured evidence in local history. The source and proof paths remain connected end to end.</p></div><div className={`obs-inference-status circuit-channel-status ${isRunning ? "is-acquiring" : ""}`}><span>LIVE API CHANNEL</span><b>{isRunning ? "Routing" : "Ready"}</b><small>{isRunning ? stageLabel : `${history.length} local observations retained`}</small><i /></div></section>
     {errorMsg && <div className="obs-error" role="alert"><b>Inference signal interrupted</b><span>{errorMsg}</span></div>}
     {apiResponse?.syntax_error && <div className="obs-error syntax-error" role="alert" style={{ background: "rgba(220, 38, 38, 0.15)", border: "1px solid rgba(220, 38, 38, 0.4)", borderRadius: "12px", padding: "16px", marginBottom: "24px", color: "#fca5a5" }}><b>Syntax Error Detected</b><pre style={{ margin: "8px 0 0", fontSize: "13px", whiteSpace: "pre-wrap", opacity: 0.9 }}>{apiResponse.syntax_error}</pre></div>}
 
-    <section className="obs-workbench">
-      <article className={`obs-source-instrument ${isRunning ? "is-running" : ""}`}>
+    <section className="obs-workbench circuit-canvas-workbench">
+      <div className={`circuit-signal-link ${isRunning ? "is-routing" : ""}`} aria-hidden="true"><i /><i /><i /></div>
+      <article className={`obs-source-instrument circuit-module circuit-source-module ${isRunning ? "is-running" : ""}`}>
         <header className="obs-instrument-header">
-          <div><span>01 / SOURCE INSTRUMENT</span><b>{uploadedFileName ?? "Untitled Verilog module"}</b></div>
+          <div><span>01 / SOURCE NODE</span><b>{uploadedFileName ?? "Untitled Verilog module"}</b></div>
           <select value={target} onChange={(e) => setTarget(e.target.value)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#8bb5c4", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", outline: "none" }}>
             <option value="asic">Generic ASIC</option>
             <option value="xilinx">Xilinx FPGA</option>
@@ -271,8 +272,8 @@ export default function PredictTool() {
         <footer className="obs-source-actions"><button onClick={resetDraft} className="obs-text-button">Restore example</button><span>{code.length.toLocaleString()} characters</span><motion.button id="btn-predict-run" onClick={runInference} disabled={isRunning} className={`obs-run-button ${isRunning ? "is-running" : hasResult ? "is-complete" : ""}`} whileHover={reduceMotion || isRunning ? undefined : { y: -2, scale: 1.015 }} whileTap={reduceMotion || isRunning ? undefined : { scale: .97 }}><i aria-hidden="true" />{isRunning ? "Reading source…" : hasResult ? "Run another estimate →" : "Run live estimate →"}</motion.button></footer>
       </article>
 
-      <article className={`obs-result-instrument ${isRunning ? "is-running" : ""}`}>
-        <header className="obs-instrument-header"><div><span>02 / EVIDENCE INSTRUMENT</span><b>{hasResult ? "Live observation complete" : "Awaiting source signal"}</b></div><small>{hasResult ? "saved locally" : "no result yet"}</small></header>
+      <article className={`obs-result-instrument circuit-module circuit-evidence-module ${isRunning ? "is-running" : ""}`}>
+        <header className="obs-instrument-header"><div><span>02 / EVIDENCE NODE</span><b>{hasResult ? "Live observation complete" : "Awaiting source signal"}</b></div><small>{hasResult ? "saved locally" : "no result yet"}</small></header>
         {isRunning && <motion.div className="obs-acquisition-rail" initial={reduceMotion ? false : { opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}><span>LIVE ACQUISITION</span>{(["capture", "structure", "evidence"] as const).map((stage, index) => <div key={stage} className={runStage === stage ? "active" : index < ["capture", "structure", "evidence"].indexOf(runStage as "capture" | "structure" | "evidence") ? "complete" : ""}><i />{stage === "capture" ? "Source" : stage === "structure" ? "Structure" : "Evidence"}</div>)}</motion.div>}
         <div className="obs-result-tabs" role="tablist" aria-label="Inference results">{(["observation", "explanation", "optimization", "evidence", "report", "history"] as InstrumentTab[]).map((tab) => <button key={tab} role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? "active" : ""} onClick={() => selectTab(tab)}>{activeTab === tab && <motion.i layoutId="obs-result-tab-indicator" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}<span>{tab}</span></button>)}</div>
         <AnimatePresence mode="wait">
