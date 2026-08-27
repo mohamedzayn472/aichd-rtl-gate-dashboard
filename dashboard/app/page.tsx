@@ -35,10 +35,10 @@ export default function RTLOverview() {
       </section></PremiumReveal>
 
       <section className="obs-metric-grid" aria-label="Key project metrics">
-        <PremiumMetricCard label="RTL MODULES" value={totalModules} description="audited training samples" tone="cyan" delay={0.03} />
-        <PremiumMetricCard label="TEST ACCURACY" value={testR2} decimals={4} description="held-out model score" tone="indigo" delay={0.08} />
-        <PremiumMetricCard label="EXPLANATION TRUST" value={faithfulnessScore} decimals={4} description="SHAP fidelity measure" tone="emerald" delay={0.13} />
-        <PremiumMetricCard label="INFERENCE LATENCY" value={primaryModel?.latency_per_sample_ms ?? 0} decimals={2} suffix=" ms" description="per-sample model response" tone="violet" delay={0.18} />
+        <PremiumMetricCard label="TEST ACCURACY" value={testR2} decimals={4} description="Held-out performance on unseen RTL modules." tone="indigo" delay={0.03} />
+        <PremiumMetricCard label="EXPLANATION TRUST" value={faithfulnessScore} decimals={4} description="Measured SHAP faithfulness to model behavior." tone="emerald" delay={0.08} />
+        <PremiumMetricCard label="INFERENCE LATENCY" value={primaryModel?.latency_per_sample_ms ?? 0} decimals={2} suffix=" ms" description="Average model response for one RTL sample." tone="violet" delay={0.13} />
+        <PremiumMetricCard label="RTL MODULES" value={totalModules} description="Audited RTL samples across all data splits." tone="cyan" delay={0.18} />
       </section>
 
       <PremiumReveal delay={0.08}><section className="obs-panel-grid">

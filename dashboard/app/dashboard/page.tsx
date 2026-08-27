@@ -86,14 +86,14 @@ export default function InteractiveDashboard() {
       </div>
 
       {/* Dual Importance Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <DashboardCard title="GLOBAL SHAP FEATURE IMPORTANCE">
-          <div className="h-80 w-full pt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 items-stretch gap-6 mb-6">
+        <DashboardCard title="GLOBAL SHAP FEATURE IMPORTANCE" className="h-full">
+          <div className="h-[380px] w-full pt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={shapData} layout="vertical">
+              <BarChart data={shapData} layout="vertical" margin={{ left: 160, right: 30, top: 20, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis type="number" stroke="var(--muted-foreground)" />
-                <YAxis dataKey="feature" type="category" width={140} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                <YAxis dataKey="feature" type="category" width={160} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "var(--card)",
@@ -107,13 +107,13 @@ export default function InteractiveDashboard() {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="EMPIRICAL ABLATION IMPACT (R² Δ)">
-          <div className="h-80 w-full pt-4">
+        <DashboardCard title="EMPIRICAL ABLATION IMPACT (R² Δ)" className="h-full">
+          <div className="h-[380px] w-full pt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={ablationData} layout="vertical">
+              <BarChart data={ablationData} layout="vertical" margin={{ left: 160, right: 30, top: 20, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis type="number" stroke="var(--muted-foreground)" />
-                <YAxis dataKey="feature" type="category" width={140} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                <YAxis dataKey="feature" type="category" width={160} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "var(--card)",

@@ -121,7 +121,7 @@ export default function ValidationPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {rawModules.map((m) => (
-                  <tr key={m.module_id} className={m.module_id === "axis_fifo" ? "bg-destructive/10 hover:bg-destructive/20 transition-colors" : "hover:bg-accent/30 transition-colors"}>
+                <tr key={m.module_id} className={m.module_id === "axis_fifo" ? "bg-destructive/10 hover:bg-destructive/20 transition-colors" : "hover:bg-[rgba(15,40,100,0.04)] transition-colors"}>
                     <td className="px-4 py-3 font-mono font-medium">
                       {m.module_id}
                       {m.module_id === "axis_fifo" && <Badge variant="outline-destructive" className="ml-2">OUTLIER</Badge>}

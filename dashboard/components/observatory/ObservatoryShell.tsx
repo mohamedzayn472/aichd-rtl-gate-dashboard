@@ -48,7 +48,7 @@ export default function ObservatoryShell({ children }: { children: React.ReactNo
       </nav>
       <div className="cc-topbar-actions">
         <button className="cc-motion-toggle" onClick={() => setReduceMotion((value) => !value)} aria-pressed={reduceMotion} title="Toggle decorative motion"><i className={reduceMotion ? "paused" : ""} />{reduceMotion ? "Motion off" : "Motion on"}</button>
-        <button className="cc-command-trigger" onClick={() => setCommandOpen(true)} aria-label="Open quick navigation"><span>Jump</span><kbd>⌘K</kbd></button>
+        <button className="cc-command-trigger" onClick={() => setCommandOpen(true)} aria-label="Open quick navigation" title="Jump to an AICHD work surface"><span>Jump</span><kbd>⌘K</kbd></button>
       </div>
     </header>
     <main className="cc-main">{children}</main>
