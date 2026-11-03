@@ -267,7 +267,8 @@ Academic Research Project
 
 ## Authors
 
-AICD Research Team
+F Mohamed Zayn Ismail
+Jayaraj M
 
 ## Support
 
