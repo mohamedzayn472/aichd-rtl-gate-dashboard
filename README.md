@@ -181,7 +181,6 @@ python scripts/predict.py --input path/to/design.v --json
 │   ├── data/                  # Generated and open-source RTL datasets
 │   ├── models/                # Trained model artifacts
 │   └── results/               # Metrics, reports, plots, and JSON evidence
-├── paper/                     # Conference-paper sources and figures
 ├── tests/                     # Repository-level test configuration
 ├── Dockerfile                 # Render-compatible deployment image
 ├── render.yaml                # Render service configuration
@@ -197,8 +196,6 @@ The current model is not a replacement for signoff synthesis. Its open-source st
 ## Documentation and artifacts
 
 - [Project context](PROJECT_CONTEXT.md)
-- [Abstract verification report](paper/ABSTRACT_VERIFICATION.md)
-- [Paper source](paper/main.tex)
 - [Optimizer correction log](rtl_gate_estimator/CORRECTION_LOG.md)
 - [System architecture notes](dashboard/public/data/system_architecture.md)
 - [Faithfulness report](rtl_gate_estimator/results/faithfulness_report.json)
@@ -210,14 +207,6 @@ The current model is not a replacement for signoff synthesis. Its open-source st
   <p><strong>F Mohamed Zayn Ismail</strong></p>
   <p><strong>Jayaraj M</strong></p>
 </div>
-
-## Citation
-
-```text
-F Mohamed Zayn Ismail and Jayaraj M,
-“AICHD: Explainable and Verification-Aware RTL Gate-Count Estimation,”
-Research project, 2026.
-```
 
 ## License
 
