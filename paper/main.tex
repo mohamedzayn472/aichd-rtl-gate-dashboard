@@ -30,23 +30,29 @@ email1@institution.edu, email2@institution.edu}
 % ABSTRACT
 % ============================================================================
 \begin{abstract}
-Accurate gate count estimation at the Register-Transfer Level (RTL) enables
-early-stage design space exploration without the overhead of full logic
-synthesis. Existing machine learning approaches for pre-synthesis prediction
-either lack explainability or treat explanation methods as inherently faithful
-without independent verification. We present \textbf{AICD}, a framework
-combining three contributions not jointly present in prior RTL/EDA ML work:
-(1)~a multi-model ML pipeline (RandomForest, XGBoost, LightGBM,
-LinearRegression) trained on 13~structural features extracted from Verilog
-RTL, achieving a best test $R^2 = 0.9963$ and MAE of $1.36$~gates on
-synthetic data with real Yosys synthesis ground truth;
-(2)~dual-method explainability via TreeSHAP and Permutation Importance; and
-(3)~independent ablation-based faithfulness verification quantifying the
-alignment between SHAP attributions and empirical model sensitivity
-(Spearman~$\rho = 0.989$, $p < 10^{-10}$). We validate on 17~real
-open-source IP cores, report an honest out-of-distribution
-$R^2 = -0.068$ exposing the training-distribution gap, and demonstrate a
-$548.9\times$ wall-clock speedup over Yosys synthesis.
+Accurate gate-count estimates at the register-transfer level (RTL) can provide
+early design-space feedback before full logic synthesis. We present
+\textbf{AICHD}, an end-to-end framework that combines lightweight source-level
+feature extraction, Yosys-based synthesis labels, machine-learning estimation,
+post-hoc explanation, and safety-gated RTL optimization. The current inference
+path uses a Random Forest regressor over 24 structural, operator, complexity,
+and bit-width features; a separate model-comparison study evaluates linear
+regression, Random Forest, XGBoost, and LightGBM on the generated benchmark.
+The framework computes TreeSHAP and permutation-based explanations and checks
+their ranking agreement with mean-replacement ablation, treating the result as
+an empirical, protocol-dependent diagnostic rather than proof of causal
+faithfulness. Evaluation includes 500 generated RTL modules and a zero-shot
+benchmark of 17 open-source modules. The latter yields $R^2=-0.068$ and an MAE
+of 8,218.69 gates, exposing substantial distribution shift and limiting claims
+of production-scale generalization. In the optimization workbench, candidate
+rewrites are retained only after Yosys equivalence checking, exhaustive
+simulation for eligible small combinational designs, and a measured reduction
+in synthesized cell count or logic depth; otherwise the candidate is withheld
+and diagnostics are returned. In a controlled 100-module benchmark, batch ML
+inference is 423.2$\times$ faster than the measured Yosys synthesis path. AICHD
+therefore provides an auditable research and engineering workflow for early RTL
+estimation, explanation, and verification-aware optimization, with explicit
+boundaries on reliability under distribution shift and incomplete tool support.
 \end{abstract}
 
 % ============================================================================

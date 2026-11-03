@@ -123,17 +123,22 @@ class ExhaustiveEquivalenceChecker:
         output_declarations = "\n  ".join(self._declaration("wire", name, width) for name, width in outputs)
         port_connections = ", ".join(f".{name}({name})" for name, _ in [*inputs, *outputs])
         input_concat = ", ".join(name for name, _ in inputs)
+        input_bits = sum(width for _, width in inputs)
+        total_bits = len(f"{vector_count - 1:b}") if vector_count > 0 else 1
+        vector_width = max(input_bits, total_bits)
         output_writes = " ".join(f'$write("%b", {name});' for name, _ in outputs)
         return f"""module aichd_exhaustive_tb;
   {input_declarations}
   {output_declarations}
   {top_module} dut ({port_connections});
-  integer vector;
+  reg [{vector_width - 1}:0] vector;
+  integer i;
   initial begin
-    for (vector = 0; vector < {vector_count}; vector = vector + 1) begin
+    for (i = 0; i < {vector_count}; i = i + 1) begin
+      vector = i;
       {{{input_concat}}} = vector;
       #1;
-      $write("AICHD_VECTOR=%0d;AICHD_OUTPUTS=", vector);
+      $write("AICHD_VECTOR=%0d;AICHD_OUTPUTS=", i);
       {output_writes}
       $display("");
     end

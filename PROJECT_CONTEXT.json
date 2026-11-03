@@ -1,0 +1,146 @@
+{
+  "project": {
+    "name": "AICHD Explainable RTL Gate Count Estimator",
+    "repository_root": "AICD Project",
+    "purpose": "Estimate Verilog RTL gate counts from source features, explain predictions, validate explanations, and expose conservative synthesis-validated optimization through a web dashboard.",
+    "current_date": "2026-09-21",
+    "source_of_truth": "Current source and configuration; archive and historical documentation are secondary."
+  },
+  "architecture": {
+    "active_backend": "rtl_gate_estimator",
+    "active_frontend": "dashboard",
+    "historical_area": "archive",
+    "flow": [
+      "Generated, real, or uploaded Verilog source",
+      "Lightweight validation and regex/scanner feature extraction",
+      "RandomForest gate-count prediction",
+      "TreeSHAP explanation and ablation comparison",
+      "Yosys synthesis labels and PPA evidence",
+      "Formal equivalence and bounded combinational verification for candidates",
+      "Next.js API and Circuit Canvas dashboard output"
+    ],
+    "database": null,
+    "hardware_interface": null,
+    "persistence": ["CSV", "JSON", "PNG", "pickle", "Verilog/Yosys logs", "browser localStorage"]
+  },
+  "technology_stack": [
+    "Python 3.11+; local environment recorded as Python 3.13.14",
+    "pandas",
+    "NumPy",
+    "scikit-learn",
+    "SHAP",
+    "SciPy",
+    "Matplotlib",
+    "PyYAML",
+    "pytest",
+    "Yosys",
+    "Icarus Verilog",
+    "Next.js 15.5",
+    "React 19",
+    "TypeScript",
+    "Tailwind CSS 4",
+    "Recharts",
+    "Framer Motion/Motion",
+    "Radix UI",
+    "Lucide React",
+    "Docker",
+    "Render"
+  ],
+  "entry_points": [
+    {"path": "rtl_gate_estimator/run_pipeline.py", "command": "python run_pipeline.py", "purpose": "Seven-phase dataset/training/explainability pipeline"},
+    {"path": "rtl_gate_estimator/scripts/predict.py", "command": "python scripts/predict.py --input path/to/design.v --json", "purpose": "Direct single-file prediction and SHAP"},
+    {"path": "rtl_gate_estimator/scripts/optimize_rtl.py", "command": "python -m scripts.optimize_rtl --input path/to/design.v --target asic", "purpose": "Live prediction plus proof-gated optimization"},
+    {"path": "dashboard/app/api/predict/route.ts", "method": "POST /api/predict", "purpose": "Browser-to-Python inference bridge"},
+    {"path": "dashboard/app/predict/page.tsx", "route": "/predict", "purpose": "Live Circuit Canvas inference workbench"}
+  ],
+  "components": [
+    {"name": "Synthetic RTL generation", "files": ["rtl_gate_estimator/scripts/generate_rtl.py", "rtl_gate_estimator/run_pipeline.py"], "inputs": "YAML settings and seed", "outputs": "Verilog modules and generator truth CSV"},
+    {"name": "Feature extraction", "files": ["rtl_gate_estimator/scripts/extract_features.py"], "inputs": "Verilog text/file", "outputs": "struct_*, complex_*, bitwidth_* feature dictionary"},
+    {"name": "Label collection", "files": ["rtl_gate_estimator/scripts/collect_labels.py", "rtl_gate_estimator/scripts/yosys_synthesis.py"], "inputs": "RTL and method", "outputs": "gate-count label CSV and metadata"},
+    {"name": "Model training", "files": ["rtl_gate_estimator/scripts/train_model.py"], "inputs": "Feature CSV and label CSV", "outputs": "RandomForest pickle and metrics JSON"},
+    {"name": "Explainability", "files": ["rtl_gate_estimator/scripts/run_shap.py", "rtl_gate_estimator/scripts/ablation_sweep.py", "rtl_gate_estimator/scripts/compare_faithfulness.py"], "inputs": "Model and feature data", "outputs": "SHAP, ablation, faithfulness artifacts"},
+    {"name": "Optimization verification", "files": ["rtl_gate_estimator/scripts/optimize_rtl.py", "rtl_gate_estimator/scripts/rules_engine.py", "rtl_gate_estimator/scripts/equivalence_checker.py", "rtl_gate_estimator/scripts/exhaustive_checker.py", "rtl_gate_estimator/scripts/synthesis_runner.py"], "inputs": "Uploaded RTL and target", "outputs": "Prediction, proof status, PPA impact, optional candidate"},
+    {"name": "Dashboard", "files": ["dashboard/app", "dashboard/components", "dashboard/scripts/sync-data.js"], "inputs": "Synced result JSON/Markdown and live API response", "outputs": "Charts, tables, inference workbench, reports, local history"}
+  ],
+  "data_flow": [
+    "Verilog source -> BOM/comment normalization -> structural validation",
+    "Validated source -> regex/scanner features -> model feature columns",
+    "Feature columns + labels -> train/validation/test split -> RandomForest",
+    "Model + source features -> gate estimate and TreeSHAP values",
+    "SHAP rankings + mean-replacement ablation -> Spearman/Kendall/top-k faithfulness report",
+    "Source -> Yosys synthesis -> hierarchy-inclusive cell count and logic depth",
+    "Source -> rule/Yosys candidate -> formal equivalence -> bounded simulation when small combinational -> candidate synthesis -> retain only if PPA improves",
+    "Next.js API JSON -> prediction page observation/explanation/optimization/evidence/report/history tabs"
+  ],
+  "algorithms": [
+    {"name": "Recursive Boolean expression generation", "location": "rtl_gate_estimator/scripts/generate_rtl.py", "purpose": "Create varied synthetic RTL while tracking gate counts"},
+    {"name": "Regex/scanner Verilog feature extraction", "location": "rtl_gate_estimator/scripts/extract_features.py", "purpose": "Obtain structural, operator, complexity, and bitwidth features without a full HDL parser"},
+    {"name": "RandomForestRegressor", "location": "rtl_gate_estimator/scripts/train_model.py", "parameters": {"n_estimators": 200, "max_depth": 20, "min_samples_split": 5, "min_samples_leaf": 2, "random_state": 42}},
+    {"name": "TreeSHAP", "location": "rtl_gate_estimator/scripts/run_shap.py and scripts/predict.py", "purpose": "Local and global feature attribution"},
+    {"name": "Mean-replacement ablation", "location": "rtl_gate_estimator/scripts/ablation_sweep.py", "purpose": "Measure prediction sensitivity per feature"},
+    {"name": "Faithfulness score", "location": "rtl_gate_estimator/scripts/compare_faithfulness.py", "formula": "0.4*((Spearman+1)/2) + 0.3*((Kendall+1)/2) + 0.3*average(top-k overlap ratios)"},
+    {"name": "Yosys synthesis metrics", "location": "rtl_gate_estimator/scripts/yosys_synthesis.py and scripts/synthesis_runner.py", "outputs": "Hierarchy-inclusive cell count and longest topological path"},
+    {"name": "Proof-gated optimization", "location": "rtl_gate_estimator/scripts/optimize_rtl.py", "gates": ["formal Yosys equivalence final success marker", "bounded exhaustive simulation for <=12 input bits and combinational designs", "candidate cell count or logic-depth reduction"]}
+  ],
+  "apis": [
+    {"method": "POST", "endpoint": "/api/predict", "input": {"code": "Verilog/SystemVerilog string", "target": "asic|xilinx|intel"}, "output": "success, gateCount, features, shapValues, optimization/proof/PPA fields", "auth": null, "limits": "Nonempty source; 500000-character maximum; 120-second Python process timeout"}
+  ],
+  "hardware": {
+    "boards": [],
+    "sensors": [],
+    "buses": [],
+    "programming": "None found. FPGA target names select synthesis mode only.",
+    "external_tools": ["Yosys", "Icarus Verilog"]
+  },
+  "configuration": {
+    "primary": "rtl_gate_estimator/config/config.yaml",
+    "dataset": {"num_samples": 500, "val_split": 0.15, "test_split": 0.15, "seed": 42},
+    "generation": {"max_inputs": 8, "max_outputs": 8, "max_internal_signals": 32, "logic_density_range": [0.3, 0.9], "module_depth_range": [2, 8]},
+    "paths": "Configured data, model, result, notebook, and log directories are relative to backend execution context.",
+    "secrets": "No secret values included. Experimental LLM path references GEMINI_API_KEY=[REDACTED]."
+  },
+  "execution": {
+    "setup": ["python -m venv .venv", ".venv\\Scripts\\activate", "pip install -r requirements.txt", "cd dashboard && npm install"],
+    "pipeline": ["cd rtl_gate_estimator", "python run_pipeline.py"],
+    "dashboard": ["cd dashboard", "npm run dev", "open http://localhost:3000"],
+    "tests": ["pytest -v", "cd rtl_gate_estimator && pytest tests/ -v"],
+    "deployment": ["docker build -t aicd-rtl-dashboard .", "docker run --rm -p 3000:3000 aicd-rtl-dashboard"],
+    "deployment_config": ["Dockerfile", "render.yaml"]
+  },
+  "testing": {
+    "framework": "pytest",
+    "configuration": "pytest.ini",
+    "coverage": ["feature validation", "regex labels", "training and pipeline artifacts", "SHAP output", "ablation/faithfulness", "formal equivalence parser", "BOM handling", "Yosys candidate/stat parsing", "bounded truth-table verification", "optimization safety gates"],
+    "limitations": ["Yosys/Icarus-dependent tests may skip or fail when tools are unavailable", "regex extraction is not a complete SystemVerilog parser", "tests do not establish broad real-world model accuracy"]
+  },
+  "completed_features": ["Seven-phase pipeline", "RandomForest prediction", "SHAP explanation", "Ablation and faithfulness reporting", "Yosys integration", "Next.js dashboard", "Live prediction API", "Formal equivalence acceptance hardening", "Bounded combinational verification", "Proof- and PPA-gated candidate exposure", "Docker/Render configuration"],
+  "partial_features": ["Real-RTL generalization is poor for large parameterized modules", "SystemVerilog support is best-effort", "Sequential optimization candidates are withheld without complete stateful proof", "Some documentation and persisted research artifacts describe historical or parallel implementations", "Live hosting health was not verified in this inspection"],
+  "known_issues": ["Current extractor uses regex/scanning instead of a full HDL parser", "CommandExecutor uses shell=True at an external-tool boundary", "Generated results and frontend copies can become stale", "Working tree contains active uncommitted edits and many temporary/generated files", "No database, authentication, hardware programming, or physical signoff path"],
+  "important_files": [
+    "PROJECT_CONTEXT.md",
+    "PROJECT_FILE_MAP.md",
+    "README.md",
+    "Dockerfile",
+    "render.yaml",
+    "rtl_gate_estimator/run_pipeline.py",
+    "rtl_gate_estimator/config/config.yaml",
+    "rtl_gate_estimator/scripts/extract_features.py",
+    "rtl_gate_estimator/scripts/collect_labels.py",
+    "rtl_gate_estimator/scripts/yosys_synthesis.py",
+    "rtl_gate_estimator/scripts/train_model.py",
+    "rtl_gate_estimator/scripts/predict.py",
+    "rtl_gate_estimator/scripts/optimize_rtl.py",
+    "rtl_gate_estimator/scripts/equivalence_checker.py",
+    "rtl_gate_estimator/scripts/exhaustive_checker.py",
+    "rtl_gate_estimator/tests/",
+    "dashboard/app/api/predict/route.ts",
+    "dashboard/app/predict/page.tsx",
+    "dashboard/scripts/sync-data.js"
+  ],
+  "current_git_state": {
+    "branch": "main",
+    "recent_history_theme": "Circuit Canvas redesign and formal/exhaustive verification hardening",
+    "working_tree": "Dirty; active changes in dashboard inference/API, optimization verification, and planning notes; numerous untracked temporary/generated artifacts",
+    "documentation_commit_created": false
+  }
+}
