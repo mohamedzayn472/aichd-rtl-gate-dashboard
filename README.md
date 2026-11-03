@@ -1,281 +1,226 @@
-# Explainable & Verified RTL-Stage Gate Count Estimator
+<div align="center">
+  <img src="dashboard/public/icon.svg" alt="AICHD project mark" width="110" />
+  <h1>AICHD</h1>
+  <p><strong>Explainable RTL gate-count estimation with synthesis evidence and verification-aware optimization.</strong></p>
+  <p>
+    <a href="https://github.com/mohamedzayn472/aichd-rtl-gate-dashboard"><img src="https://img.shields.io/badge/status-research%20prototype-14233f?style=for-the-badge" alt="Research prototype" /></a>
+    <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 15" /></a>
+    <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11 or newer" /></a>
+    <a href="https://yosyshq.net/yosys/"><img src="https://img.shields.io/badge/Yosys-synthesis-ef7d00?style=for-the-badge" alt="Yosys synthesis" /></a>
+  </p>
+  <p>
+    <a href="https://github.com/mohamedzayn472/aichd-rtl-gate-dashboard"><img src="https://img.shields.io/github/last-commit/mohamedzayn472/aichd-rtl-gate-dashboard?style=flat-square&color=22c55e" alt="Last commit" /></a>
+    <a href="https://github.com/mohamedzayn472/aichd-rtl-gate-dashboard"><img src="https://img.shields.io/github/repo-size/mohamedzayn472/aichd-rtl-gate-dashboard?style=flat-square&color=3b82f6" alt="Repository size" /></a>
+  </p>
+</div>
 
-## Project Overview
+---
 
-This research project implements an end-to-end pipeline for estimating RTL gate counts using machine learning with explainability through SHAP (SHapley Additive exPlanations). The system combines automated RTL generation, synthesis, feature extraction, and verification to create a transparent, debuggable gate count prediction model.
+## What is AICHD?
 
-## Project Goals
+AICHD is an end-to-end research and engineering platform for estimating the hardware cost of Verilog/SystemVerilog RTL before a full synthesis run. It combines a lightweight machine-learning estimator with Yosys-backed synthesis evidence, TreeSHAP explanations, ablation analysis, and a safety-gated optimization workbench.
 
-1. **Generate RTL datasets automatically** - Create synthetic but realistic RTL modules with varying complexity
-2. **Extract block-level RTL features** - Derive meaningful features from Verilog code for ML
-3. **Run Yosys synthesis for ground truth** - Get real gate counts via EDA tools
-4. **Train Random Forest estimator** - Build an accurate ML model for gate count prediction
-5. **Generate SHAP explanations** - Provide interpretable explanations for predictions
-6. **Perform automated block ablation** - Study feature importance through systematic removal
-7. **Verify SHAP faithfulness** - Ensure explanations align with real synthesis results
+The project is designed to answer three practical questions early in the RTL workflow:
 
-## Architecture
+1. **How large is this design likely to be?**
+2. **Which source-level features drive the estimate?**
+3. **Can a candidate rewrite be accepted without changing the design’s function?**
 
+The active web application uses a light technical **Circuit Canvas** interface and exposes the workflow through an interactive Next.js dashboard.
+
+## At a glance
+
+| Capability | Current implementation |
+|---|---|
+| Source representation | 24 structural, operator, complexity, and bit-width features |
+| Training benchmark | 500 generated RTL modules |
+| Default inference model | Random Forest regressor |
+| Explanation | TreeSHAP and permutation-based importance |
+| Explanation diagnostic | Mean-replacement ablation with ranking comparisons |
+| Synthesis evidence | Yosys cell counts and logic depth |
+| Verification gates | Yosys equivalence checking plus exhaustive simulation for eligible small combinational designs |
+| External stress test | 17 open-source RTL modules |
+| Dashboard | Next.js 15, React 19, TypeScript, Tailwind CSS, Recharts, Framer Motion |
+
+## System architecture
+
+```mermaid
+flowchart LR
+    A[Verilog / SystemVerilog RTL] --> B[Validation and feature extraction]
+    A --> C[Yosys synthesis]
+    B --> D[24 source-level features]
+    C --> E[Cell count and logic-depth evidence]
+    D --> F[Random Forest inference]
+    F --> G[Gate-count estimate]
+    F --> H[TreeSHAP explanation]
+    D --> I[Permutation and ablation analysis]
+    H --> J[Faithfulness diagnostic]
+    I --> J
+    A --> K[Optimization workbench]
+    K --> L[Candidate RTL rewrite]
+    L --> M{Equivalence and bounded verification}
+    M -->|Pass| N{Measured improvement?}
+    M -->|Fail or unsupported| O[Withhold candidate and return diagnostics]
+    N -->|Yes| P[Expose corrected RTL and PPA evidence]
+    N -->|No| O
+    G --> Q[Circuit Canvas dashboard]
+    H --> Q
+    E --> Q
+    P --> Q
 ```
-AICD Project/
-├── rtl_gate_estimator/     # ML backend
-│   ├── scripts/            # Feature extraction, training, prediction
-│   ├── data/rtl/           # 500 generated Verilog modules
-│   ├── models/             # Trained model.pkl
-│   ├── results/            # JSON metrics, SHAP values, plots
-│   ├── config/             # config.yaml
-│   └── tests/              # pytest test suite
-├── dashboard/              # Next.js web dashboard (canonical UI)
-│   ├── app/                # Pages: dashboard, predict, validation, etc.
-│   ├── scripts/sync-data.js
-│   └── data/               # Synced copies of results JSONs
-├── archive/                # Retired implementations (kept for reference)
-│   ├── legacy_static_dashboard/
-│   ├── streamlit_dashboard/
-│   └── rtl_gate_estimator_old/
-├── requirements.txt        # Single Python dependency file
-└── README.md
+
+### Verification-aware optimization gate
+
+```mermaid
+flowchart TD
+    S[Submitted RTL] --> Y[Yosys baseline synthesis]
+    Y --> R[Generate candidate]
+    R --> F[Yosys formal equivalence]
+    F --> X{Equivalent?}
+    X -->|No| W[Reject and preserve original]
+    X -->|Yes| C{Small combinational design?}
+    C -->|Yes| E[Exhaustive truth-table verification]
+    C -->|No| P[Use complete supported proof path]
+    E --> V{All vectors pass?}
+    V -->|No| W
+    V -->|Yes| M[Candidate synthesis]
+    P --> M
+    M --> I{Cell count or logic depth improves?}
+    I -->|No| W
+    I -->|Yes| A[Return optimized RTL and evidence]
 ```
 
-## Installation
+## Research evidence
 
-### Prerequisites
+The repository contains reproducible artifacts for model comparison, label provenance, explanation analysis, latency measurement, and real-RTL evaluation.
 
-- Python 3.11+
-- Yosys (for synthesis) - optional but recommended
-- pip or conda
+- **500 generated modules** form the main training and evaluation benchmark.
+- A separate model-comparison study evaluates linear regression, Random Forest, XGBoost, and LightGBM.
+- The zero-shot open-source benchmark contains **17 modules** and reports `R² = -0.068` with an MAE of `8,218.69` gates, highlighting the current distribution-shift limitation.
+- A controlled 100-module benchmark reports batch ML inference at **423.2× faster** than the measured Yosys synthesis path.
+- Explanation rankings are compared against mean-replacement ablation as an empirical diagnostic. This is not presented as proof of causal faithfulness.
 
-### Setup
+The detailed artifacts are available in [`rtl_gate_estimator/results/`](rtl_gate_estimator/results/) and are synchronized into the dashboard for browser-based inspection.
 
-1. **Clone/Navigate to project:**
+## Dashboard routes
+
+| Route | Purpose |
+|---|---|
+| `/` | Project overview and system introduction |
+| `/predict` | Live RTL inference and optimization workbench |
+| `/dashboard` | SHAP, ablation, and KPI analysis |
+| `/faithfulness` | Explanation-ranking validation |
+| `/validation` | Real-RTL evaluation and synthesis evidence |
+| `/model-comparison` | Regressor comparison |
+| `/learning-curve` | Training-size analysis |
+| `/latency` | ML versus synthesis timing |
+| `/docs` | Developer and pipeline documentation |
+
+## Quick start
+
+### 1. Prerequisites
+
+- Python 3.11 or newer
+- Node.js 18 or newer
+- Yosys for synthesis-backed metrics
+- Icarus Verilog for bounded exhaustive simulation
+
+Yosys is a system package, not a pip dependency. Install it using your platform’s package manager or the official release instructions.
+
+### 2. Install Python dependencies
+
 ```bash
-cd "c:\Users\moham\Desktop\AICD Project"
-```
+python -m venv .venv
 
-2. **Create Python environment:**
-```bash
-python -m venv venv
 # Windows
-venv\Scripts\activate
-# Linux/macOS
-source venv/bin/activate
-```
+.venv\\Scripts\\activate
 
-3. **Install dependencies:**
-```bash
+# Linux/macOS
+source .venv/bin/activate
+
 pip install -r requirements.txt
 ```
 
-4. **Install Yosys (optional — system tool, NOT a pip package):**
-```bash
-# Ubuntu/Debian:
-sudo apt-get install yosys
-# macOS:
-brew install yosys
-# Conda:
-conda install -c conda-forge yosys
-# Windows: Download from https://github.com/YosysHQ/yosys/releases
-```
-
-5. **Launch the Next.js dashboard (canonical UI):**
-```bash
-cd dashboard
-npm install
-npm run dev
-# Open http://localhost:3000
-```
-
-## Usage
-
-### Run Complete Pipeline
-
-Execute the entire workflow from the backend directory:
+### 3. Run the research pipeline
 
 ```bash
 cd rtl_gate_estimator
 python run_pipeline.py
 ```
 
-The pipeline includes:
-- Phase 1: RTL Generation (500 RTL modules by default)
-- Phase 2: Feature Extraction
-- Phase 3: Label Collection (Yosys or regex fallback)
-- Phase 4: Model Training
-- Phase 5: SHAP Explanations
-- Phase 6: Ablation Study
-- Phase 7: Faithfulness Verification
+The pipeline performs RTL generation, feature extraction, label collection, model training, SHAP analysis, ablation, and faithfulness reporting.
 
-### Run Individual Phases
+### 4. Launch the dashboard
 
-```python
-from run_pipeline import RTLGateCountPipeline
-
-pipeline = RTLGateCountPipeline()
-
-# Phase 1: Generate RTL dataset
-pipeline.phase_1_generate_rtl(num_samples=100)
-
-# Phase 2: Extract features
-pipeline.phase_2_extract_features()
-
-# Phase 3: Collect labels
-pipeline.phase_3_collect_labels(method='regex')
-
-# Phase 4: Train model
-pipeline.phase_4_train_model()
-
-# Phase 5: Generate SHAP explanations
-pipeline.phase_5_shap_explanations()
-
-# Phase 6: Ablation study
-pipeline.phase_6_ablation_study()
-
-# Phase 7: Verify faithfulness
-pipeline.phase_7_verify_faithfulness()
+```bash
+cd dashboard
+npm install
+npm run dev
 ```
 
-### Predict on a Single RTL File
+Open [http://localhost:3000](http://localhost:3000).
+
+### 5. Run a direct prediction
 
 ```bash
 cd rtl_gate_estimator
-python scripts/predict.py --input path/to/design.v
 python scripts/predict.py --input path/to/design.v --json
 ```
 
-### Run Tests
+## Repository layout
 
-```bash
-# From project root (uses pytest.ini → rtl_gate_estimator/tests)
-pytest -v
-
-# Or from the backend directory
-cd rtl_gate_estimator
-pytest tests/ -v
+```text
+.
+├── dashboard/                 # Canonical Next.js application
+│   ├── app/                   # Routes, API bridge, and Circuit Canvas UI
+│   ├── components/            # Shared dashboard components
+│   ├── data/                  # Synchronized research artifacts
+│   └── scripts/               # Data synchronization helpers
+├── rtl_gate_estimator/        # Python research and inference backend
+│   ├── scripts/               # Feature extraction, training, proof, and optimization
+│   ├── data/                  # Generated and open-source RTL datasets
+│   ├── models/                # Trained model artifacts
+│   └── results/               # Metrics, reports, plots, and JSON evidence
+├── paper/                     # Conference-paper sources and figures
+├── tests/                     # Repository-level test configuration
+├── Dockerfile                 # Render-compatible deployment image
+├── render.yaml                # Render service configuration
+└── README.md
 ```
 
-## Configuration
+## Safety and limitations
 
-Edit `rtl_gate_estimator/config/config.yaml` to customize dataset size, feature extraction, model hyperparameters, and paths.
+AICHD separates model evidence from synthesis and proof evidence. An ML estimate remains available when synthesis fails, but corrected RTL is not exposed unless the candidate passes the applicable verification gates and demonstrates a measured improvement. Sequential or unsupported designs may be withheld with diagnostics.
 
-## Outputs
+The current model is not a replacement for signoff synthesis. Its open-source stress-test result demonstrates that source-level features learned from generated RTL do not automatically generalize to large, hierarchical, parameterized, or memory-dominated designs.
 
-After running the pipeline, results are saved in the `results/` directory:
+## Documentation and artifacts
 
-- **extracted_features.csv** - Extracted RTL features for all modules
-- **synthesis_results.csv** - Gate counts from Yosys synthesis
-- **gate_count_estimator.pkl** - Trained Random Forest model
-- **training_metrics.json** - Model performance metrics
-- **shap_values.json** - SHAP values for explanations
-- **shap_summary.png** - SHAP feature importance plot
-- **ablation_study_results.json** - Feature importance from ablation
-- **faithfulness_report.json** - SHAP faithfulness verification results
+- [Project context](PROJECT_CONTEXT.md)
+- [Abstract verification report](paper/ABSTRACT_VERIFICATION.md)
+- [Paper source](paper/main.tex)
+- [Optimizer correction log](rtl_gate_estimator/CORRECTION_LOG.md)
+- [System architecture notes](dashboard/public/data/system_architecture.md)
+- [Faithfulness report](rtl_gate_estimator/results/faithfulness_report.json)
+- [Real-RTL evaluation](rtl_gate_estimator/results/real_rtl_evaluation.json)
 
-## Key Features
+## Authors
 
-### RTL Dataset Generation
-- Automatically generates diverse RTL modules
-- Configurable logic density and module complexity
-- Ground truth gate counts through synthesis
-
-### Feature Extraction
-- Structural features (inputs, outputs, gates, operators)
-- Complexity metrics (code density, nesting depth)
-- Bitwidth analysis and operator counting
-- Automatic handling of feature normalization
-
-### Machine Learning
-- Random Forest model with optimized hyperparameters
-- Cross-validation for robust evaluation
-- Feature importance ranking
-- Model persistence and reloading
-
-### Explainability
-- SHAP TreeExplainer for fast computations
-- Feature importance visualization
-- Dependence plots for individual features
-- Force plots for local explanations
-
-### Verification
-- Faithfulness metrics against synthesis
-- Monotonicity testing
-- Explanation coverage analysis
-- Correlation studies
-
-## Project Philosophy
-
-- **No TODOs**: All code is complete and production-ready
-- **Complete Code**: Every module is fully implemented
-- **Modular Architecture**: Clean separation of concerns
-- **Comprehensive Testing**: Integration and unit tests included
-- **Automated Verification**: All outputs are validated
-
-## Performance
-
-On a typical system:
-- RTL Generation: ~1000 modules/minute
-- Feature Extraction: ~500 modules/minute
-- Synthesis: ~50 modules/minute (depends on Yosys)
-- Model Training: <1 minute for 500 samples
-- SHAP Explanation: ~30 seconds for 100 samples
-
-## Requirements
-
-- Python 3.11+
-- Node.js 18+ (for the dashboard)
-- pandas >= 2.0.0
-- numpy >= 1.24.0
-- scikit-learn >= 1.3.0
-- shap >= 0.42.0
-- matplotlib >= 3.7.0
-- seaborn >= 0.12.0
-- scipy >= 1.11.0
-- plotly >= 5.17.0
-- pytest >= 7.4.0
-- Yosys >= 0.34 (optional, system package — **not** installable via pip)
-
-## Troubleshooting
-
-**Yosys not found:**
-If synthesis fails, the system falls back to estimation mode. Yosys is a **system package** — do not try `pip install yosys`. Install via:
-```bash
-sudo apt-get install yosys   # Debian/Ubuntu
-brew install yosys           # macOS
-conda install -c conda-forge yosys  # Any OS
-```
-
-**Memory issues with large datasets:**
-Reduce `num_samples` in `rtl_gate_estimator/config/config.yaml` or process in batches.
-
-**Import errors:**
-Ensure you've activated the virtual environment and installed dependencies:
-```bash
-pip install -r requirements.txt
-```
+<div align="center">
+  <p><strong>F Mohamed Zayn Ismail</strong></p>
+  <p><strong>Jayaraj M</strong></p>
+</div>
 
 ## Citation
 
-If you use this project in your research, please cite:
-
-```
-Explainable & Verified RTL-Stage Gate Count Estimator
-Research Project, 2026
+```text
+F Mohamed Zayn Ismail and Jayaraj M,
+“AICHD: Explainable and Verification-Aware RTL Gate-Count Estimation,”
+Research project, 2026.
 ```
 
 ## License
 
-Academic Research Project
+Academic research project. See the repository contents and institutional requirements before redistribution.
 
-## Authors
-
-F Mohamed Zayn Ismail
-Jayaraj M
-
-## Support
-
-For issues or questions, refer to the comprehensive logging output or check individual module documentation.
-
----
-
-**Last Updated**: August 2026
-**Status**: Production Ready ✓
-**Canonical Dashboard**: Next.js (`dashboard/`)
+<p align="center"><sub>Built for auditable RTL design-space exploration.</sub></p>
